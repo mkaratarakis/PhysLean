@@ -93,6 +93,26 @@ lemma dual_mem (h : Λ ∈ LorentzGroup d) : dual Λ ∈ LorentzGroup d := by
   rw [mem_iff_dual_mul_self, dual_dual]
   exact mem_iff_self_mul_dual.mp h
 
+/--
+A matrix `Λ` is in the Lorentz group if and only if it satisfies `Λᵀ * η * Λ = η`.
+-/
+lemma mem_iff_transpose_mul_minkowskiMatrix_mul_self
+    (Λ : Matrix (Fin 1 ⊕ Fin d) (Fin 1 ⊕ Fin d) ℝ) :
+    Λ ∈ LorentzGroup d ↔ Λᵀ * η * Λ = η := by
+  rw [mem_iff_dual_mul_self]
+  rw [dual]
+  constructor
+  · intro h
+    have h' : η * ((η * Λᵀ * η) * Λ) = η * 1 := congr_arg (η * ·) h
+    rw [mul_one] at h'
+    simp_rw [← mul_assoc, sq, one_mul] at h'
+    exact h'
+  · intro h
+    calc
+      (η * Λᵀ * η) * Λ = η * (Λᵀ * η * Λ)  := by simp_rw [mul_assoc]
+      _ = η * η                       := by rw [h]
+      _ = 1                           := by rw [minkowskiMatrix.sq]
+
 end LorentzGroup
 
 /-!
