@@ -26,12 +26,6 @@ or `ℂ` (which is the field denoted `𝕜`).
 - `Distribution.diracDelta`: Dirac delta distribution at a point `a : E` is a distribution
   that takes in a test function `η : 𝓢(E, 𝕜)` and outputs `η a`.
 
-## TODO
-- In the future, any function of polynomial growth can be interpreted as a distribution. This will
-  be helpful for defining the distributions that correspond to `H` (Heaviside step function), or
-  `cos(x)`.
-- Generalise `derivative` to higher dimensional domain.
-
 -/
 
 open SchwartzMap NNReal
@@ -47,7 +41,7 @@ abbrev Distribution (𝕜 E F : Type) [RCLike 𝕜] [NormedAddCommGroup E] [Norm
     [NormedSpace ℝ E] [NormedSpace 𝕜 F] : Type :=
   𝓢(E, 𝕜) →L[𝕜] F
 
-@[inherit_doc] notation:25 E:arg "→d[" 𝕜:25 "] " F:arg => Distribution 𝕜 E F
+@[inherit_doc] notation:25 E:arg "→d[" 𝕜:25 "] " F:0 => Distribution 𝕜 E F
 
 variable (𝕜 : Type) {E F : Type} [RCLike 𝕜] [NormedAddCommGroup E] [NormedAddCommGroup F]
 
@@ -57,15 +51,15 @@ section NormedSpace
 
 variable [NormedSpace ℝ E] [NormedSpace 𝕜 F]
 
-/-- We construct a distribution from the following data:
+/-- The construction of a distribution from the following data:
 1. We take a finite set `s` of pairs `(k, n) ∈ ℕ × ℕ` that will be explained later.
 2. We take a linear map `u` that evaluates the given Schwartz function `η`. At this stage we don't
-   need `u` to be continuous.
+  need `u` to be continuous.
 3. Recall that a Schwartz function `η` satisfies a bound
-   `‖x‖ᵏ * ‖(dⁿ/dxⁿ) η‖ < Mₙₖ` where `Mₙₖ : ℝ` only depends on `(k, n) : ℕ × ℕ`.
+  `‖x‖ᵏ * ‖(dⁿ/dxⁿ) η‖ < Mₙₖ` where `Mₙₖ : ℝ` only depends on `(k, n) : ℕ × ℕ`.
 4. This step is where `s` is used: for each test function `η`, the norm `‖u η‖` is required to be
-   bounded by `C * (‖x‖ᵏ * ‖(dⁿ/dxⁿ) η‖)` for some `x : ℝ` and for some `(k, n) ∈ s`, where
-   `C ≥ 0` is a global scalar.
+  bounded by `C * (‖x‖ᵏ * ‖(dⁿ/dxⁿ) η‖)` for some `x : ℝ` and for some `(k, n) ∈ s`, where
+  `C ≥ 0` is a global scalar.
 -/
 def ofLinear (s : Finset (ℕ × ℕ)) (u : 𝓢(E, 𝕜) →ₗ[𝕜] F)
     (hu : ∃ C : ℝ, 0 ≤ C ∧ ∀ η : 𝓢(E, 𝕜), ∃ (k : ℕ) (n : ℕ) (x : E), (k, n) ∈ s ∧
@@ -74,7 +68,6 @@ def ofLinear (s : Finset (ℕ × ℕ)) (u : 𝓢(E, 𝕜) →ₗ[𝕜] F)
     obtain ⟨C, hC, hu⟩ := hu
     refine ⟨s, C, hC, fun η ↦ ?_⟩
     obtain ⟨k, n, x, hkn, hη⟩ := hu η
-    have hs : s.Nonempty := ⟨(k, n), hkn⟩
     refine hη.trans <| mul_le_mul_of_nonneg_left ((le_seminorm 𝕜 k n η x).trans ?_) hC
     rw [Seminorm.finset_sup_apply]
     refine (NNReal.coe_le_coe (r₁ := ⟨SchwartzMap.seminorm 𝕜 k n η, apply_nonneg _ _⟩)).2 ?_
@@ -109,7 +102,6 @@ def diracDelta' (a : E) (v : F) : E →d[𝕜] F :=
 
 end NormedSpace
 
-
 section RCLike
 
 /-- Definition of derivative of distribution: Let `u` be a distribution. Then its derivative is
@@ -129,6 +121,174 @@ def derivative : (ℝ →d[𝕜] 𝕜) →ₗ[𝕜] (ℝ →d[𝕜] 𝕜) where
 
 end RCLike
 
+section fderiv
+
+variable [NormedSpace ℝ E] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
+
+/-- The Fréchet derivative of a distribution.
+
+Informally, for a distribution `u : E →d[𝕜] F`,
+the Fréchet derivative `fderiv u x v` corresponds to the dervative of `u` at the
+point `x` in the direction `v`. For example, if `F = ℝ³`
+then `fderiv u x v` is a vector in `ℝ³` corrsponding to
+`(v₁ ∂u₁/∂x₁ + v₂ ∂u₁/∂x₂ + v₃ ∂u₁/∂x₃, v₁ ∂u₂/∂x₁ + v₂ ∂u₂/∂x₂ + v₃ ∂u₂/∂x₃,...)`.
+
+Formally, for a distribution `u : E →d[𝕜] F`, this is actually defined
+the distribution which takes test function `η : E → 𝕜` to
+`- u (SchwartzMap.evalCLM v (SchwartzMap.fderivCLM 𝕜 η))`.
+
+Note that, unlike for functions, the Fréchet derivative of a distribution always exists.
+-/
+def fderivD [FiniteDimensional ℝ E] : (E →d[𝕜] F) →ₗ[𝕜] (E →d[𝕜] (E →L[ℝ] F)) where
+  toFun u := {
+    toFun η := LinearMap.toContinuousLinearMap {
+      toFun v := ContinuousLinearEquiv.neg 𝕜 <| u <|
+        SchwartzMap.evalCLM (𝕜 := 𝕜) v <|
+        SchwartzMap.fderivCLM 𝕜 (E := E) (F := 𝕜) η
+      map_add' v1 v2 := by
+        simp only [ContinuousLinearEquiv.neg_apply]
+        trans -u ((SchwartzMap.evalCLM (𝕜 := 𝕜) v1) ((fderivCLM 𝕜) η) +
+          (SchwartzMap.evalCLM (𝕜 := 𝕜) v2) ((fderivCLM 𝕜) η))
+        swap
+        · simp only [map_add, neg_add_rev]
+          abel
+        congr
+        ext x
+        simp only [SchwartzMap.evalCLM, mkCLM, mkLM, map_add, ContinuousLinearMap.coe_mk',
+          LinearMap.coe_mk, AddHom.coe_mk, fderivCLM_apply, add_apply]
+        rfl
+      map_smul' a v1 := by
+        simp only [ContinuousLinearEquiv.neg_apply, RingHom.id_apply, smul_neg, neg_inj]
+        trans u (a • (SchwartzMap.evalCLM (𝕜 := 𝕜) v1) ((fderivCLM 𝕜) η))
+        swap
+        · simp
+        congr
+        ext x
+        simp only [SchwartzMap.evalCLM, mkCLM, mkLM, map_smul, ContinuousLinearMap.coe_mk',
+          LinearMap.coe_mk, AddHom.coe_mk, fderivCLM_apply, smul_apply]
+        rfl}
+    map_add' η1 η2 := by
+      ext x
+      simp only [map_add, ContinuousLinearEquiv.neg_apply, neg_add_rev,
+        LinearMap.coe_toContinuousLinearMap', LinearMap.coe_mk, AddHom.coe_mk,
+        ContinuousLinearMap.add_apply]
+    map_smul' a η := by
+      ext x
+      simp
+    cont := by
+      refine continuous_clm_apply.mpr ?_
+      intro y
+      simp only [ContinuousLinearEquiv.neg_apply, LinearMap.coe_toContinuousLinearMap',
+        LinearMap.coe_mk, AddHom.coe_mk]
+      fun_prop
+  }
+  map_add' u₁ u₂ := by
+    ext η
+    simp only [ContinuousLinearMap.add_apply, ContinuousLinearEquiv.neg_apply, neg_add_rev,
+      ContinuousLinearMap.coe_mk', LinearMap.coe_mk, AddHom.coe_mk,
+      LinearMap.coe_toContinuousLinearMap']
+    abel
+  map_smul' c u := by
+    ext
+    simp
+
+lemma fderivD_apply [FiniteDimensional ℝ E] (u : E →d[𝕜] F) (η : 𝓢(E, 𝕜)) (v : E) :
+    fderivD 𝕜 u η v = - u (SchwartzMap.evalCLM (𝕜 := 𝕜) v (SchwartzMap.fderivCLM 𝕜 η)) := by
+  rfl
+
+end fderiv
+
+section constant
+/-!
+
+## The constant distribution
+
+-/
+open MeasureTheory
+section
+variable (E : Type) [NormedAddCommGroup E]
+  [NormedSpace ℝ E] [NormedSpace ℝ F]
+  [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
+  [MeasureSpace E] [BorelSpace E] [SecondCountableTopology E]
+
+/-- The constant distribution `E →d[𝕜] F`, for a given `c : F` this corresponds
+  to the integral `∫ x, η x • c ∂MeasureTheory.volume`. -/
+def const [hμ : Measure.HasTemperateGrowth (volume (α := E))] (c : F) : E →d[𝕜] F := by
+  refine mkCLMtoNormedSpace
+    (fun η => ∫ x, η x • c ∂MeasureTheory.volume) ?_
+    ?_ ?_
+  · intro η1 η2
+    simp [add_smul]
+    by_cases hc : c = 0
+    · subst hc
+      simp
+    rw [MeasureTheory.integral_add]
+    · refine (integrable_smul_const hc).mpr ?_
+      exact integrable η1
+    · refine (integrable_smul_const hc).mpr ?_
+      exact integrable η2
+  · intro a η
+    simp only [Fin.isValue, smul_apply, RingHom.id_apply, smul_assoc]
+    rw [MeasureTheory.integral_smul]
+  rcases hμ.exists_integrable with ⟨n, h⟩
+  let m := (n, 0)
+  use Finset.Iic m, ‖c‖ * (2 ^ n * ∫ x, (1 + ‖x‖) ^ (- (n : ℝ)) ∂(volume (α := E)))
+  refine ⟨by positivity, fun η ↦ (norm_integral_le_integral_norm _).trans ?_⟩
+  have h' : ∀ x, ‖η x‖ ≤ (1 + ‖x‖) ^ (-(n : ℝ)) *
+    (2 ^ n * ((Finset.Iic m).sup (fun m' => SchwartzMap.seminorm 𝕜 m'.1 m'.2) η)) := by
+    intro x
+    rw [Real.rpow_neg (by positivity), ← div_eq_inv_mul,
+      le_div_iff₀' (by positivity), Real.rpow_natCast]
+    simpa using one_add_le_sup_seminorm_apply (m := m) (k := n) (n := 0) le_rfl le_rfl η x
+  conv_lhs =>
+    enter [2, x]
+    rw [norm_smul, mul_comm]
+  conv_lhs =>
+    rw [MeasureTheory.integral_const_mul]
+  rw [mul_assoc]
+  by_cases hc : c = 0
+  · subst hc
+    simp
+  refine (mul_le_mul_iff_of_pos_left ?_).mpr ?_
+  · positivity
+  apply (integral_mono (by simpa using η.integrable_pow_mul ((volume)) 0) _ h').trans
+  · unfold schwartzSeminormFamily
+    rw [integral_mul_const, ← mul_assoc, mul_comm (2 ^ n)]
+  apply h.mul_const
+
+lemma const_apply [hμ : Measure.HasTemperateGrowth (volume (α := E))] (c : F)
+    (η : 𝓢(E, 𝕜)) :
+    const 𝕜 E c η = ∫ x, η x • c ∂MeasureTheory.volume := by rfl
+end
+section
+
+variable [NormedSpace ℝ E] [NormedSpace ℝ F]
+  [MeasureSpace E] [BorelSpace E] [SecondCountableTopology E]
+
+@[simp]
+lemma fderivD_const [hμ : Measure.IsAddHaarMeasure (volume (α := E))]
+    [FiniteDimensional ℝ E] (c : F) :
+    fderivD ℝ (const ℝ E c) = 0 := by
+  ext η v
+  rw [fderivD_apply, const_apply]
+  simp only [ContinuousLinearMap.zero_apply, neg_eq_zero]
+  trans -∫ (x : E), η x • (fderiv ℝ (fun y => c) x) v ∂volume
+  swap
+  · simp
+  rw [integral_smul_fderiv_eq_neg_fderiv_smul_of_integrable]
+  simp
+  rfl
+  · apply MeasureTheory.Integrable.smul_const
+    change Integrable (SchwartzMap.evalCLM (𝕜 := ℝ) v (SchwartzMap.fderivCLM ℝ η)) volume
+    exact integrable ((SchwartzMap.evalCLM v) ((fderivCLM ℝ) η))
+  · simp
+  · apply MeasureTheory.Integrable.smul_const
+    exact integrable η
+  · exact SchwartzMap.differentiable η
+  · simp
+
+end
+end constant
 
 section Complex
 
@@ -148,5 +308,58 @@ def fourierTransform : (E →d[ℂ] F) →ₗ[ℂ] (E →d[ℂ] F) where
   rfl
 
 end Complex
+
+/-!
+
+## Heaviside step function
+
+-/
+open MeasureTheory
+
+/-- The Heaviside step distribution defined on `(EuclideanSpace ℝ (Fin d.succ)) `
+  equal to `1` in the positive `z`-direction and `0` in the negative `z`-direction. -/
+def heavisideStep (d : ℕ) : (EuclideanSpace ℝ (Fin d.succ)) →d[ℝ] ℝ := by
+  refine mkCLMtoNormedSpace
+    (fun η =>
+    ∫ x in {x : EuclideanSpace ℝ (Fin d.succ) | 0 < x (Fin.last d)}, η x ∂MeasureTheory.volume) ?_
+    ?_ ?_
+  · intro η1 η2
+    simp only [Nat.succ_eq_add_one, add_apply]
+    rw [MeasureTheory.integral_add]
+    · apply MeasureTheory.Integrable.restrict
+      exact integrable η1
+    · apply MeasureTheory.Integrable.restrict
+      exact integrable η2
+  · intro a η
+    simp only [Fin.isValue, smul_apply, RingHom.id_apply]
+    rw [MeasureTheory.integral_smul]
+  haveI hμ : (volume (α := EuclideanSpace ℝ (Fin d.succ))).HasTemperateGrowth := by
+    infer_instance
+  rcases hμ.exists_integrable with ⟨n, h⟩
+  let m := (n, 0)
+  use Finset.Iic m, 2 ^ n *
+    ∫ x, (1 + ‖x‖) ^ (- (n : ℝ)) ∂(volume (α := EuclideanSpace ℝ (Fin d.succ)))
+  refine ⟨by positivity, fun η ↦ (norm_integral_le_integral_norm _).trans ?_⟩
+  trans ∫ x, ‖η x‖ ∂(volume (α := EuclideanSpace ℝ (Fin d.succ)))
+  · refine setIntegral_le_integral ?_ ?_
+    · have hi := integrable η (μ := volume)
+      fun_prop
+    · filter_upwards with x
+      simp
+  · have h' : ∀ x, ‖η x‖ ≤ (1 + ‖x‖) ^ (-(n : ℝ)) *
+      (2 ^ n * ((Finset.Iic m).sup (fun m' => SchwartzMap.seminorm ℝ m'.1 m'.2) η)) := by
+      intro x
+      rw [Real.rpow_neg (by positivity), ← div_eq_inv_mul,
+        le_div_iff₀' (by positivity), Real.rpow_natCast]
+      simpa using one_add_le_sup_seminorm_apply (m := m) (k := n) (n := 0) le_rfl le_rfl η x
+    apply (integral_mono (by simpa using η.integrable_pow_mul ((volume)) 0) _ h').trans
+    · unfold schwartzSeminormFamily
+      rw [integral_mul_const, ← mul_assoc, mul_comm (2 ^ n)]
+    apply h.mul_const
+
+lemma heavisideStep_apply (d : ℕ) (η : 𝓢(EuclideanSpace ℝ (Fin d.succ), ℝ)) :
+    heavisideStep d η = ∫ x in {x : EuclideanSpace ℝ (Fin d.succ) | 0 < x (Fin.last d)},
+      η x ∂MeasureTheory.volume := by
+  rfl
 
 end Distribution

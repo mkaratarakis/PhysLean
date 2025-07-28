@@ -12,6 +12,9 @@ import PhysLean.CondensedMatter.TightBindingChain.Basic
 import PhysLean.Cosmology.Basic
 import PhysLean.Cosmology.FLRW.Basic
 import PhysLean.Electromagnetism.Basic
+import PhysLean.Electromagnetism.Electrostatics.Basic
+import PhysLean.Electromagnetism.Electrostatics.OneDimension.PointParticle
+import PhysLean.Electromagnetism.Electrostatics.OneDimension.Vacuum
 import PhysLean.Electromagnetism.FieldStrength.Basic
 import PhysLean.Electromagnetism.FieldStrength.Derivative
 import PhysLean.Electromagnetism.Homogeneous
@@ -23,6 +26,8 @@ import PhysLean.Mathematics.Calculus.Divergence
 import PhysLean.Mathematics.DataStructures.FourTree.Basic
 import PhysLean.Mathematics.DataStructures.FourTree.UniqueMap
 import PhysLean.Mathematics.Distribution.Basic
+import PhysLean.Mathematics.Distribution.OfBounded
+import PhysLean.Mathematics.Distribution.PowMul
 import PhysLean.Mathematics.FDerivCurry
 import PhysLean.Mathematics.Fin
 import PhysLean.Mathematics.Fin.Involutions
@@ -221,6 +226,7 @@ import PhysLean.Relativity.Bispinors.Basic
 import PhysLean.Relativity.CliffordAlgebra
 import PhysLean.Relativity.LorentzAlgebra.Basic
 import PhysLean.Relativity.LorentzAlgebra.Basis
+import PhysLean.Relativity.LorentzAlgebra.ExponentialMap
 import PhysLean.Relativity.LorentzGroup.Basic
 import PhysLean.Relativity.LorentzGroup.Boosts.Apply
 import PhysLean.Relativity.LorentzGroup.Boosts.Basic
@@ -296,11 +302,14 @@ import PhysLean.Relativity.Tensors.TensorSpecies.Basic
 import PhysLean.Relativity.Tensors.Tensorial
 import PhysLean.Relativity.Tensors.UnitTensor
 import PhysLean.SpaceAndTime.Space.Basic
+import PhysLean.SpaceAndTime.Space.Distributions
 import PhysLean.SpaceAndTime.Space.VectorIdentities
 import PhysLean.SpaceAndTime.SpaceTime.Basic
 import PhysLean.SpaceAndTime.SpaceTime.TimeSlice
 import PhysLean.SpaceAndTime.Time.Basic
-import PhysLean.SpaceAndTime.TopTime.Basic
+import PhysLean.SpaceAndTime.Time.TimeMan
+import PhysLean.SpaceAndTime.Time.TimeTransMan
+import PhysLean.SpaceAndTime.Time.TimeUnit
 import PhysLean.StatisticalMechanics.BoltzmannConstant
 import PhysLean.StatisticalMechanics.CanonicalEnsemble.Basic
 import PhysLean.StatisticalMechanics.CanonicalEnsemble.Finite
