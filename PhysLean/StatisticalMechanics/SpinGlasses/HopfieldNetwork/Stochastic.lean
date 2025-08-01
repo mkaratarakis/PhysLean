@@ -323,8 +323,7 @@ lemma gibbs_total_not_top (local_field : ℝ) (T : ℝ) :
 /-- For a positive PMF.map application, there exists a preimage with positive probability -/
 lemma pmf_map_pos_implies_preimage {α β : Type} [Fintype α] [DecidableEq β]
   {p : α → ENNReal} (h_pmf : ∑ a, p a = 1) (f : α → β) (y : β) :
-  (PMF.map f (PMF.ofFintype p h_pmf)) y > 0 →
-  ∃ x : α, p x > 0 ∧ f x = y := by
+  (PMF.map f (PMF.ofFintype p h_pmf)) y > 0 → ∃ x : α, p x > 0 ∧ f x = y := by
   intro h_pos
   simp only [PMF.map_apply] at h_pos
   simp_all only [PMF.ofFintype_apply, tsum_eq_filter_sum, gt_iff_lt, filter_sum_pos_iff_exists_pos,
