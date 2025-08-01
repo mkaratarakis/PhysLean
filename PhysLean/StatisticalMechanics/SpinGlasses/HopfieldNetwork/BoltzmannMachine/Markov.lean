@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Matteo Cipollina
 -/
 import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.BoltzmannMachine.Core
-import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.BoltzmannMachine.Markov
 
 open Finset Matrix NeuralNetwork State ENNReal Real
 open PMF MeasureTheory ProbabilityTheory.Kernel Set
@@ -101,8 +100,7 @@ noncomputable def partitionFunctionBM (p : ParamsBM R U) : ENNReal :=
 /--
 The partition function is positive and finite, provided T > 0.
 -/
-lemma partitionFunctionBM_pos_finite (p : ParamsBM R U)
-    [Nonempty (StateBM R U)] :
+lemma partitionFunctionBM_pos_finite (p : ParamsBM R U) [Nonempty (StateBM R U)] :
     0 < partitionFunctionBM p ∧ partitionFunctionBM p < ⊤ := by
   constructor
   · -- Proof of 0 < Z
@@ -125,8 +123,7 @@ $\pi(s) = \frac{1}{Z} e^{-E(s)/T}$.
 Defined as a measure with density `boltzmannDensityFnBM / partitionFunctionBM`
 with respect to the counting measure on the finite state space.
 -/
-noncomputable def boltzmannDistributionBM (p : ParamsBM R U)
-    [ Nonempty (StateBM R U)] :
+noncomputable def boltzmannDistributionBM (p : ParamsBM R U) [Nonempty (StateBM R U)] :
     Measure (StateBM R U) :=
   let density := fun s => boltzmannDensityFnBM p s / partitionFunctionBM p
   let Z_pos_finite := partitionFunctionBM_pos_finite p
@@ -141,7 +138,8 @@ noncomputable def boltzmannDistributionBM (p : ParamsBM R U)
 
 -- Cleaner definition relying on the proof that Z is good
 noncomputable def boltzmannDistributionBM' (p : ParamsBM R U) : Measure (StateBM R U) :=
-  @Measure.withDensity (StateBM R U) _ Measure.count (fun s => boltzmannDensityFnBM p s / partitionFunctionBM p)
+  @Measure.withDensity (StateBM R U) _ Measure.count
+    (fun s => boltzmannDensityFnBM p s / partitionFunctionBM p)
 
 -- Prove it's a probability measure
 instance isProbabilityMeasure_boltzmannDistributionBM
@@ -170,4 +168,5 @@ instance isProbabilityMeasure_boltzmannDistributionBM
   -- The numerator sum is exactly the definition of the partition function
   rw [← partitionFunctionBM]
   -- So we get Z/Z = 1
-  exact ENNReal.div_self (partitionFunctionBM_pos_finite p).1.ne' (partitionFunctionBM_pos_finite p).2.ne
+  exact ENNReal.div_self (partitionFunctionBM_pos_finite p).1.ne'
+    (partitionFunctionBM_pos_finite p).2.ne

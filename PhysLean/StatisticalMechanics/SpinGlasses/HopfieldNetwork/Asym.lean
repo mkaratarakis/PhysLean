@@ -32,6 +32,7 @@ This decomposition allows us to analyze the dynamics and convergence properties
 of Hopfield networks with asymmetric weights.
 -/
 
+
 open Finset Matrix NeuralNetwork State
 
 variable {R U : Type} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
@@ -58,8 +59,8 @@ The network has:
 - Asymmetric weights (w_ij can differ from w_ji)
 - Weights that can be decomposed into antisymmetric and positive definite components
 -/
-abbrev AsymmetricHopfieldNetwork (R U : Type) [Field R] [LinearOrder R] [IsStrictOrderedRing R] [DecidableEq U]
-   [Nonempty U] [Fintype U] [StarRing R] : NeuralNetwork R U where
+abbrev AsymmetricHopfieldNetwork (R U : Type) [Field R] [LinearOrder R] [IsStrictOrderedRing R]
+   [DecidableEq U] [Nonempty U] [Fintype U] [StarRing R] : NeuralNetwork R U where
   /- The adjacency relation between neurons `u` and `v`, defined as `u ≠ v`. -/
   Adj u v := u ≠ v
   /- The set of input neurons, defined as the universal set. -/

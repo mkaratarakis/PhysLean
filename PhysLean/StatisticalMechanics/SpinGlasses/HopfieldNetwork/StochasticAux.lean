@@ -39,8 +39,7 @@ lemma uniform_neuron_selection_prob_valid :
     simp only [ne_eq, Nat.cast_eq_zero]
     exact ne_of_gt h_card_pos
   have h_card_top : (Fintype.card U : ENNReal) ≠ ⊤ := ENNReal.natCast_ne_top (Fintype.card U)
-  rw [ENNReal.div_eq_inv_mul]
-  rw [nsmul_eq_mul]
+  rw [ENNReal.div_eq_inv_mul, nsmul_eq_mul]
   simp only [mul_one]
   rw [ENNReal.mul_inv_cancel h_card_ne_zero h_card_top]
 
@@ -277,7 +276,7 @@ lemma pmf_filter_update_neuron
       ext b
       simp only [mem_filter, mem_univ, true_and]
       rw [@bool_update_eq_iff]
-      simp only [h1, and_false, h2, or_self, ↓reduceIte, not_mem_empty]
+      simp only [h1, and_false, h2, or_self, ↓reduceIte, Finset.notMem_empty]
 
 /-- For a PMF over binary values mapped to states, the probability of a specific state
     equals the probability of its corresponding binary value -/
@@ -352,9 +351,10 @@ lemma pmf_map_binary_state
       simp only [ne_eq, Bool.true_eq_false, not_false_eq_true]
     simp only [h_false_neq, if_true, if_false, zero_add]
 
-/-- A specialized version of the previous lemma for the case where the state is an update with new_val = 1 -/
-lemma pmf_map_update_one
-  (s : (HopfieldNetwork R U).State) (u : U) (p : Bool → ENNReal) (h_sum : ∑ b, p b = 1) :
+/-- A specialized version of the previous lemma for the case where the state
+  is an update with new_val = 1 -/
+lemma pmf_map_update_one (s : (HopfieldNetwork R U).State) (u : U)
+    (p : Bool → ENNReal) (h_sum : ∑ b, p b = 1) :
   let f : Bool → (HopfieldNetwork R U).State := λ b =>
     if b then NN.State.updateNeuron s u 1 (Or.inl rfl)
     else NN.State.updateNeuron s u (-1) (Or.inr rfl)
