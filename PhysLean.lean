@@ -344,6 +344,16 @@ import PhysLean.StringTheory.FTheory.SU5U1.Quanta.IsViable.Elems
 import PhysLean.StringTheory.FTheory.SU5U1.Quanta.ToList
 import PhysLean.StringTheory.FTheory.SU5U1.Quanta.YukawaRegeneration
 import PhysLean.Thermodynamics.Basic
+import PhysLean.Thermodynamics.Temperature.Basic
+import PhysLean.Thermodynamics.Temperature.TemperatureUnits
+import PhysLean.Units.Area
+import PhysLean.Units.Basic
+import PhysLean.Units.Energy
+import PhysLean.Units.Mass
+import PhysLean.Units.Momentum.Basic
+import PhysLean.Units.Pressure
+import PhysLean.Units.Speed
+import PhysLean.Units.Velocity
 import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.Asym
 import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.BoltzmannMachine.Core
 import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.BoltzmannMachine.Markov
