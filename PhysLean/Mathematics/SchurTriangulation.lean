@@ -228,15 +228,12 @@ decreasing_by exact
 end LinearMap
 
 namespace Matrix
-/- IMPORTANT: existing `DecidableEq n` should take precedence over `LinearOrder.decidableEq`,
-a.k.a., `instDecidableEq_mathlib`. -/
+
 variable [RCLike 𝕜] [IsAlgClosed 𝕜] [Fintype n] [DecidableEq n] [LinearOrder n] (A : Matrix n n 𝕜)
 
-/-- **Don't use this definition directly.** Instead, use `Matrix.schurTriangulationBasis`,
-`Matrix.schurTriangulationUnitary`, and `Matrix.schurTriangulation` for which this is their
-simultaneous definition. This is `LinearMap.SchurTriangulationAux` adapted for matrices in the
+/-- This is `LinearMap.SchurTriangulationAux` adapted for matrices in the
 Euclidean space. -/
-noncomputable def schurTriangulationAux :
+private noncomputable def schurTriangulationAux :
     OrthonormalBasis n 𝕜 (EuclideanSpace 𝕜 n) × UpperTriangular n 𝕜 :=
   let f := toEuclideanLin A
   let ⟨d, hd, b, hut⟩ := LinearMap.SchurTriangulationAux.of f

@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Joseph Tooby-Smith
 -/
 import PhysLean.Particles.SuperSymmetry.SU5.Charges.Yukawa
-import Mathlib.Tactic.FinCases
 /-!
 
 # Mapping charges from different sets
@@ -13,7 +12,14 @@ In this module we define a function `map` which takes an additive monoid homomor
 `f : 𝓩 →+ 𝓩1` and a charge `x : Charges 𝓩`, and returns the charge
 `x.map f : Charges 𝓩1` obtained by mapping the elements of `x` by `f`.
 
-We prove that various properties of charges are preserved under this mapping.
+There are various properties which are preserved under this mapping:
+- Anomaly cancellation.
+- The presence of a specific term in the potential.
+- Being complete.
+
+There are some properties which are reflected under this mapping:
+- Not being pheno-constrained.
+- Not regenerating dangerous Yukawa terms at a given level.
 
 We define the preimage of this mapping within a subset `ofFinset S5 S10` of `Charges 𝓩` in
 a computationaly efficient way.
@@ -88,7 +94,11 @@ lemma map_ofPotentialTerm_toFinset [DecidableEq 𝓩]
   · intro h
     cases T
     all_goals
-      simp [ofPotentialTerm'] at h
+      try simp [ofPotentialTerm'_W2_finset, ofPotentialTerm'_W3_finset,
+      ofPotentialTerm'_β_finset, ofPotentialTerm'_μ_finset,
+      ofPotentialTerm'_W4_finset, ofPotentialTerm'_K2_finset,
+      ofPotentialTerm'_topYukawa_finset, ofPotentialTerm'_bottomYukawa_finset] at h
+      try simp [ofPotentialTerm'] at h
       simp only [SProd.sprod, Multiset.instSProd, Multiset.mem_product] at h
     case' μ | β =>
       obtain ⟨q1, q2, ⟨q1_mem, q2_mem⟩, q_sum⟩ := h
@@ -117,7 +127,11 @@ lemma map_ofPotentialTerm_toFinset [DecidableEq 𝓩]
       use q1 + q2 + q3 + q4
     all_goals
       subst i
-      simp [ofPotentialTerm']
+      try simp [ofPotentialTerm'_W2_finset, ofPotentialTerm'_W3_finset,
+      ofPotentialTerm'_β_finset, ofPotentialTerm'_μ_finset,
+      ofPotentialTerm'_W4_finset, ofPotentialTerm'_K2_finset,
+      ofPotentialTerm'_topYukawa_finset, ofPotentialTerm'_bottomYukawa_finset]
+      try simp [ofPotentialTerm']
       simp only [SProd.sprod, Multiset.instSProd, Multiset.mem_product]
       use q1, q2
       simp_all
@@ -127,9 +141,17 @@ lemma map_ofPotentialTerm_toFinset [DecidableEq 𝓩]
     obtain ⟨a, h, rfl⟩ := h
     cases T
     all_goals
-      simp [ofPotentialTerm'] at h
+      try simp [ofPotentialTerm'_W2_finset, ofPotentialTerm'_W3_finset,
+      ofPotentialTerm'_β_finset, ofPotentialTerm'_μ_finset,
+      ofPotentialTerm'_W4_finset, ofPotentialTerm'_K2_finset,
+      ofPotentialTerm'_topYukawa_finset, ofPotentialTerm'_bottomYukawa_finset] at h
+      try simp [ofPotentialTerm'] at h
       simp only [SProd.sprod, Multiset.instSProd, Multiset.mem_product] at h
-      simp [ofPotentialTerm']
+      try simp [ofPotentialTerm'_W2_finset, ofPotentialTerm'_W3_finset,
+      ofPotentialTerm'_β_finset, ofPotentialTerm'_μ_finset,
+      ofPotentialTerm'_W4_finset, ofPotentialTerm'_K2_finset,
+      ofPotentialTerm'_topYukawa_finset, ofPotentialTerm'_bottomYukawa_finset]
+      try simp [ofPotentialTerm']
     case' μ | β =>
       obtain ⟨q1, q2, ⟨q1_mem, q2_mem⟩, q_sum⟩ := h
       use f q1, f q2
@@ -156,6 +178,28 @@ lemma mem_map_ofPotentialTerm_iff [DecidableEq 𝓩]
   trans i ∈ (ofPotentialTerm (map f x) T).toFinset
   · simp
   rw [map_ofPotentialTerm_toFinset]
+  simp
+
+lemma mem_map_ofPotentialTerm'_iff[DecidableEq 𝓩]
+    (f : 𝓩 →+ 𝓩1) (x : Charges 𝓩) (T : PotentialTerm) :
+    i ∈ (ofPotentialTerm' (map f x) T) ↔ i ∈ (ofPotentialTerm' x T).map f := by
+  rw [← mem_ofPotentialTerm_iff_mem_ofPotentialTerm]
+  rw [mem_map_ofPotentialTerm_iff]
+  simp only [Multiset.mem_map]
+  constructor
+  · intro ⟨a, h, h1⟩
+    refine ⟨a, ?_, h1⟩
+    exact mem_ofPotentialTerm_iff_mem_ofPotentialTerm.mp h
+  · intro ⟨a, h, h1⟩
+    refine ⟨a, ?_, h1⟩
+    exact mem_ofPotentialTerm_iff_mem_ofPotentialTerm.mpr h
+
+lemma map_ofPotentialTerm'_toFinset [DecidableEq 𝓩]
+    (f : 𝓩 →+ 𝓩1) (x : Charges 𝓩) (T : PotentialTerm) :
+    (ofPotentialTerm' (map f x) T).toFinset = (ofPotentialTerm' x T).toFinset.image f := by
+  ext i
+  simp only [Multiset.mem_toFinset, Finset.mem_image]
+  rw [mem_map_ofPotentialTerm'_iff]
   simp
 
 lemma map_subset {f : 𝓩 →+ 𝓩1} {x y : Charges 𝓩} (h : x ⊆ y) :
@@ -225,7 +269,7 @@ lemma map_ofYukawaTerms_toFinset {f : 𝓩 →+ 𝓩1} {x : Charges 𝓩} :
   ext i
   rw [Finset.image_union]
   simp only [Finset.mem_union, Multiset.mem_toFinset]
-  rw [mem_map_ofPotentialTerm_iff, mem_map_ofPotentialTerm_iff]
+  rw [mem_map_ofPotentialTerm'_iff, mem_map_ofPotentialTerm'_iff]
   simp [Multiset.mem_map]
 
 lemma mem_map_ofYukawaTerms_iff {f : 𝓩 →+ 𝓩1} {x : Charges 𝓩} {i} :
@@ -280,16 +324,16 @@ lemma mem_map_ofYukawaTermsNSum_iff {f : 𝓩 →+ 𝓩1} {x : Charges 𝓩} {n 
 lemma map_phenoConstrainingChargesSP_toFinset {f : 𝓩 →+ 𝓩1} {x : Charges 𝓩} :
     (map f x).phenoConstrainingChargesSP.toFinset =
     x.phenoConstrainingChargesSP.toFinset.image f := by
-  simp [phenoConstrainingChargesSP, map_ofPotentialTerm_toFinset, Finset.image_union]
+  simp [phenoConstrainingChargesSP, map_ofPotentialTerm'_toFinset, Finset.image_union]
 
 lemma map_yukawaGeneratesDangerousAtLevel (f : 𝓩 →+ 𝓩1) {x : Charges 𝓩} (n : ℕ)
     (h : x.YukawaGeneratesDangerousAtLevel n) : (map f x).YukawaGeneratesDangerousAtLevel n := by
-  rw [YukawaGeneratesDangerousAtLevel]
+  rw [yukawaGeneratesDangerousAtLevel_iff_toFinset]
   rw [map_phenoConstrainingChargesSP_toFinset, map_ofYukawaTermsNSum_toFinset]
   rw [← Finset.nonempty_iff_ne_empty, ← Finset.not_disjoint_iff_nonempty_inter]
   apply Disjoint.of_image_finset.mt
   rw [Finset.not_disjoint_iff_nonempty_inter, Finset.nonempty_iff_ne_empty]
-  exact h
+  exact (yukawaGeneratesDangerousAtLevel_iff_toFinset _ _).mp h
 
 lemma not_yukawaGeneratesDangerousAtLevel_of_map {f : 𝓩 →+ 𝓩1} {x : Charges 𝓩}
     (n : ℕ) (h : ¬ (map f x).YukawaGeneratesDangerousAtLevel n) :

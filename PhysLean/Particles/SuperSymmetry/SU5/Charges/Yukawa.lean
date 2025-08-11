@@ -28,9 +28,9 @@ variable {𝓩 : Type} [AddCommGroup 𝓩]
   Correspondingly, the (negative) of the charges of the singlets needed to regenerate all
   Yukawa terms in the potential. -/
 def ofYukawaTerms (x : Charges 𝓩) : Multiset 𝓩 :=
-  x.ofPotentialTerm topYukawa + x.ofPotentialTerm bottomYukawa
+  x.ofPotentialTerm' topYukawa + x.ofPotentialTerm' bottomYukawa
 
-lemma ofYukawaTerms_subset_of_subset {x y : Charges 𝓩} (h : x ⊆ y) :
+lemma ofYukawaTerms_subset_of_subset [DecidableEq 𝓩] {x y : Charges 𝓩} (h : x ⊆ y) :
     x.ofYukawaTerms ⊆ y.ofYukawaTerms := by
   simp only [ofYukawaTerms]
   refine Multiset.subset_iff.mpr ?_
@@ -39,10 +39,10 @@ lemma ofYukawaTerms_subset_of_subset {x y : Charges 𝓩} (h : x ⊆ y) :
   intro hr
   rcases hr with hr | hr
   · left
-    apply ofPotentialTerm_mono h
+    apply ofPotentialTerm'_mono h
     exact hr
   · right
-    apply ofPotentialTerm_mono h
+    apply ofPotentialTerm'_mono h
     exact hr
 
 /-- The charges of those terms which can be regenerated with up-to `n`
@@ -54,7 +54,7 @@ def ofYukawaTermsNSum (x : Charges 𝓩) : ℕ → Multiset 𝓩
   | n + 1 => x.ofYukawaTermsNSum n + (x.ofYukawaTermsNSum n).bind fun sSum =>
     (x.ofYukawaTerms.map fun s => sSum + s)
 
-lemma ofYukawaTermsNSum_subset_of_subset {x y : Charges 𝓩} (h : x ⊆ y) (n : ℕ) :
+lemma ofYukawaTermsNSum_subset_of_subset [DecidableEq 𝓩] {x y : Charges 𝓩} (h : x ⊆ y) (n : ℕ) :
     x.ofYukawaTermsNSum n ⊆ y.ofYukawaTermsNSum n := by
   induction n with
   | zero => simp [ofYukawaTermsNSum]
@@ -80,9 +80,40 @@ variable [DecidableEq 𝓩]
 
 /-- For charges `x : Charges`, the proposition which states that the singlets
   needed to regenerate the Yukawa couplings regnerate a dangerous coupling
-  (in the superpotential) with up-to `n` insertions of the scalars. -/
+  (in the superpotential) with up-to `n` insertions of the scalars.
+
+  Note: If defined as (x.ofYukawaTermsNSum n).toFinset ∩ x.phenoConstrainingChargesSP.toFinset ≠ ∅
+  the exicution time is greatley increased. -/
 def YukawaGeneratesDangerousAtLevel (x : Charges 𝓩) (n : ℕ) : Prop :=
-  (x.ofYukawaTermsNSum n).toFinset ∩ x.phenoConstrainingChargesSP.toFinset ≠ ∅
+  (x.ofYukawaTermsNSum n) ∩ x.phenoConstrainingChargesSP ≠ ∅
+
+lemma YukawaGeneratesDangerousAtLevel_iff_inter {x : Charges 𝓩} {n : ℕ} :
+    YukawaGeneratesDangerousAtLevel x n ↔
+    (x.ofYukawaTermsNSum n) ∩ x.phenoConstrainingChargesSP ≠ ∅ := by rfl
+
+lemma yukawaGeneratesDangerousAtLevel_iff_toFinset (x : Charges 𝓩) (n : ℕ) :
+    x.YukawaGeneratesDangerousAtLevel n ↔
+    (x.ofYukawaTermsNSum n).toFinset ∩ x.phenoConstrainingChargesSP.toFinset ≠ ∅ := by
+  simp [YukawaGeneratesDangerousAtLevel]
+  constructor
+  · intro h hn
+    apply h
+    ext i
+    simp only [Multiset.count_inter, Multiset.notMem_zero, not_false_eq_true,
+      Multiset.count_eq_zero_of_notMem, Nat.min_eq_zero_iff, Multiset.count_eq_zero]
+    by_contra h0
+    simp at h0
+    have h1 : i ∈ (x.ofYukawaTermsNSum n).toFinset ∩ x.phenoConstrainingChargesSP.toFinset := by
+      simpa using h0
+    simp_all
+  · intro h hn
+    apply h
+    ext i
+    simp only [Finset.mem_inter, Multiset.mem_toFinset, Finset.notMem_empty, iff_false, not_and]
+    intro h1 h2
+    have h3 : i ∈ (x.ofYukawaTermsNSum n) ∩ x.phenoConstrainingChargesSP := by
+      simpa using ⟨h1, h2⟩
+    simp_all
 
 @[simp]
 lemma not_yukawaGeneratesDangerousAtLevel_of_empty (n : ℕ) :
@@ -90,13 +121,13 @@ lemma not_yukawaGeneratesDangerousAtLevel_of_empty (n : ℕ) :
   simp [YukawaGeneratesDangerousAtLevel]
 
 instance (x : Charges 𝓩) (n : ℕ) : Decidable (YukawaGeneratesDangerousAtLevel x n) :=
-  inferInstanceAs (Decidable ((x.ofYukawaTermsNSum n).toFinset
-    ∩ x.phenoConstrainingChargesSP.toFinset ≠ ∅))
+  inferInstanceAs (Decidable ((x.ofYukawaTermsNSum n)
+    ∩ x.phenoConstrainingChargesSP ≠ ∅))
 
 lemma yukawaGeneratesDangerousAtLevel_of_subset {x y : Charges 𝓩} {n : ℕ} (h : x ⊆ y)
     (hx : x.YukawaGeneratesDangerousAtLevel n) :
     y.YukawaGeneratesDangerousAtLevel n := by
-  simp [YukawaGeneratesDangerousAtLevel] at *
+  simp [yukawaGeneratesDangerousAtLevel_iff_toFinset] at *
   have h1 : (x.ofYukawaTermsNSum n).toFinset ∩ x.phenoConstrainingChargesSP.toFinset
       ⊆ (y.ofYukawaTermsNSum n).toFinset ∩ y.phenoConstrainingChargesSP.toFinset := by
     trans (x.ofYukawaTermsNSum n).toFinset ∩ y.phenoConstrainingChargesSP.toFinset
@@ -115,7 +146,7 @@ lemma yukawaGeneratesDangerousAtLevel_of_subset {x y : Charges 𝓩} {n : ℕ} (
 lemma yukawaGeneratesDangerousAtLevel_succ {x : Charges 𝓩} {n : ℕ}
     (hx : x.YukawaGeneratesDangerousAtLevel n) :
     x.YukawaGeneratesDangerousAtLevel (n + 1) := by
-  simp [YukawaGeneratesDangerousAtLevel] at *
+  simp [yukawaGeneratesDangerousAtLevel_iff_toFinset] at *
   simp [ofYukawaTermsNSum]
   rw [Finset.union_inter_distrib_right]
   rw [Finset.union_eq_empty]
