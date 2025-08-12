@@ -6,7 +6,7 @@ Authors: Matteo Cipollina
 
 import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.NNStochastic
 import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.StochasticAux
-import PhysLean.StatisticalMechanics.Temperature
+import PhysLean.Thermodynamics.Temperature.Basic
 import Mathlib.Analysis.RCLike.Basic
 import Mathlib.LinearAlgebra.AffineSpace.AffineMap
 import Mathlib.LinearAlgebra.Dual.Lemmas

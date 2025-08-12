@@ -47,7 +47,7 @@ abbrev HNfout (act : R) : R := act
 - `U`: A finite, nonempty set of neurons with decidable equality.
 -/
 abbrev HopfieldNetwork (R U : Type) [Field R] [LinearOrder R] [IsStrictOrderedRing R]
-   [DecidableEq U] [Nonempty U] [Fintype U] : NeuralNetwork R U where
+   [DecidableEq U] [Nonempty U] [Fintype U] : NeuralNetwork R U R where
   /- The adjacency relation between neurons `u` and `v`, defined as `u ≠ v`. -/
   Adj u v := u ≠ v
   /- The set of input neurons, defined as the universal set. -/
@@ -74,9 +74,10 @@ abbrev HopfieldNetwork (R U : Type) [Field R] [LinearOrder R] [IsStrictOrderedRi
   fnet u w pred _ := HNfnet u w pred
   /- The activation function for neuron `u`, given input and threshold `θ`. -/
   fact u _ net_input_val θ_vec := HNfact (θ_vec.get 0) net_input_val
-    -- Ignoring the current_act_val argument
-  /- The output function, given the activation state `act`. -/
-  fout _ act := HNfout act
+  /- The output function is identity since σ = R here. -/
+  fout _ act := act
+  /- Optional σ → R map; identity since σ = R. -/
+  m := id
   /- A predicate that the activation state `act` is either 1 or -1. -/
   pact act := act = 1 ∨ act = -1
   /- A proof that the activation state of neuron `u`
@@ -848,9 +849,12 @@ lemma HopfieldNet_cyclic_converg (wθ : Params (HopfieldNetwork R U)) (s : State
     (HopfieldNet_stabilize_cyclic s useq hf).isStable wθ :=
   (Nat.find_spec (HopfieldNet_convergence_cyclic s useq hf)).2
 
-lemma patterns_pairwise_orthogonal (ps : Fin m → (HopfieldNetwork R U).State)
+lemma patterns_pairwise_orthogonal {m : ℕ}
+  (ps : Fin m → (HopfieldNetwork R U).State)
   (horth : ∀ {i j : Fin m} (_ : i ≠ j), dotProduct (ps i).act (ps j).act = 0) :
-  ∀ (j : Fin m), ((Hebbian ps).w).mulVec (ps j).act = (card U - m) * (ps j).act := by
+  ∀ (j : Fin m),
+    ((Hebbian ps).w).mulVec (ps j).act
+      = ((card U : R) - (m : R)) • (ps j).act := by
   intros k
   ext t
   unfold Hebbian
@@ -860,7 +864,7 @@ lemma patterns_pairwise_orthogonal (ps : Fin m → (HopfieldNetwork R U).State)
   rw [Finset.sum_apply]
   simp only [Finset.sum_apply]
   unfold dotProduct at horth
-  have : ∀ i j, (dotProduct (ps i).act (ps j).act) = if i ≠ j then 0 else card U := by
+  have : ∀ i j, (dotProduct (ps i).act (ps j).act) = if i ≠ j then 0 else (card U : R) := by
     intros i j
     by_cases h : i ≠ j
     · specialize horth h
@@ -878,17 +882,18 @@ lemma patterns_pairwise_orthogonal (ps : Fin m → (HopfieldNetwork R U).State)
         have hact1 : ∀ i, ((ps j).act i) * ((ps j).act i) = 1 := fun i => mul_self_eq_one_iff.mpr (hact i)
         calc _ = ∑ i, (ps j).act i * (ps j).act i := rfl
              _ = ∑ i, 1 * 1 := by simp_rw [hact1]; rw [mul_one]
-             _ = card U := by simp only [sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul,
-                mul_one]
+             _ = (card U : R) := by
+                  -- sum of 1 over all i in U is card U, cast to R
+                  simp only [sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one, Nat.cast_ofNat]
   simp only [dotProduct, ite_not, Nat.cast_ite, Nat.cast_zero] at this
   conv => enter [1,2]; ext l; rw [sub_mul]; rw [sum_mul]; conv => enter [1,2]; ext i; rw [mul_assoc]
   rw [Finset.sum_sub_distrib]
   nth_rw 1 [sum_comm]
   calc _= ∑ y : Fin m, (ps y).act t * ∑ x , ((ps y).act x * (ps k).act x)
-          - ∑ x , ↑m * (1 : Matrix U U R) t x * (ps k).act x := ?_
-       _= ∑ y : Fin m, (ps y).act t *  (if y ≠ k then 0 else card U) -
-            ∑ x , ↑m * (1 : Matrix U U R) t x * (ps k).act x := ?_
-       _ = (card U - ↑m) * (ps k).act t  := ?_
+          - ∑ x , (m : R) * (1 : Matrix U U R) t x * (ps k).act x := ?_
+       _= ∑ y : Fin m, (ps y).act t *  (if y ≠ k then 0 else (card U : R)) -
+            ∑ x , (m : R) * (1 : Matrix U U R) t x * (ps k).act x := ?_
+       _ = (((card U : R) - (m : R)) * (ps k).act t)  := ?_
   · simp only [sub_left_inj]; rw [Finset.sum_congr rfl]
     exact fun x _ => (mul_sum univ (fun i => (ps x).act i * (ps k).act i) ((ps x).act t)).symm
   · simp only [sub_left_inj]; rw [Finset.sum_congr rfl]; intros i _
@@ -897,10 +902,11 @@ lemma patterns_pairwise_orthogonal (ps : Fin m → (HopfieldNetwork R U).State)
     conv => enter [1,2,2]; ext k; rw [mul_assoc]
     rw [← mul_sum, mul_comm]
     simp only [one_apply, ite_mul, one_mul, zero_mul, Finset.sum_ite_eq, mem_univ, reduceIte]
-    exact (sub_mul (card U : R) m ((ps k).act t)).symm
+    exact (sub_mul (card U : R) (m : R) ((ps k).act t)).symm
 
-lemma stateisStablecondition (ps : Fin m → (HopfieldNetwork R U).State)
-  (s : (HopfieldNetwork R U).State) c (hc : 0 < c)
+lemma stateisStablecondition {m : ℕ}
+  (ps : Fin m → (HopfieldNetwork R U).State)
+  (s : (HopfieldNetwork R U).State) (c : R) (hc : 0 < c)
   (hw : ∀ u, ((Hebbian ps).w).mulVec s.act u = c * s.act u) : s.isStable (Hebbian ps) := by
   intros u
   unfold Up out
@@ -925,12 +931,14 @@ lemma stateisStablecondition (ps : Fin m → (HopfieldNetwork R U).State)
     · rfl
   exact (Hebbian ps).hw u u fun a => a rfl
 
-lemma Hebbian_stable (hm : m < card U) (ps : Fin m → (HopfieldNetwork R U).State) (j : Fin m)
+lemma Hebbian_stable {m : ℕ}
+  (hm : m < card U) (ps : Fin m → (HopfieldNetwork R U).State) (j : Fin m)
     (horth : ∀ {i j : Fin m} (_ : i ≠ j), dotProduct (ps i).act (ps j).act = 0):
   isStable (Hebbian ps) (ps j) := by
   unfold isStable
-  have := patterns_pairwise_orthogonal ps horth j
-  have hmn0 : 0 < (card U - m : R) := by
-    simpa only [sub_pos, Nat.cast_lt]
-  apply stateisStablecondition ps (ps j) (card U - m) hmn0
+  have := patterns_pairwise_orthogonal (ps := ps) horth j
+  have hmn0 : 0 < ((card U : R) - (m : R)) := by
+    have : (m : R) < (card U : R) := by exact_mod_cast hm
+    exact sub_pos.mpr this
+  apply stateisStablecondition (ps := ps) (s := (ps j)) (((card U : R) - (m : R))) hmn0
   · intros u; rw [funext_iff] at this; exact this u
