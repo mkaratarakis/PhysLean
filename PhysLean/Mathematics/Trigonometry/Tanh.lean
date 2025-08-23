@@ -3,9 +3,8 @@ Copyright (c) 2025 Afiq Hatta. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Afiq Hatta
 -/
-import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
-import Mathlib.Data.Complex.Trigonometric
 import PhysLean.Meta.Linters.Sorry
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 /-!
 # Properties of Tanh
@@ -23,23 +22,22 @@ open Real
 open NNReal
 open Field
 
-
 /-- tanh(x) is less than 1 for all x -/
-lemma tanh_lt_one (x : ℝ) : Real.tanh x < 1 := by
-  rw [Real.tanh_eq_sinh_div_cosh]
-  rw [div_lt_one]
-  apply Real.sinh_lt_cosh
-  apply Real.cosh_pos
+lemma tanh_lt_one (x : ℝ) : tanh x < 1 := by
+  rw [tanh_eq_sinh_div_cosh, div_lt_one (cosh_pos x)]
+  exact sinh_lt_cosh x
 
 /-- tanh(x) is greater than -1 for all x -/
-@[sorryful]
-lemma minus_one_lt_tanh (x : ℝ) : -1 < Real.tanh x := by
-  sorry
+lemma minus_one_lt_tanh (x : ℝ) : -1 < tanh x := by
+  rw [tanh_eq_sinh_div_cosh, lt_div_iff₀ (cosh_pos x), ← sub_pos, neg_one_mul]
+  simp [exp_pos x]
 
 /-- The absolute value of tanh is bounded by 1 -/
-@[sorryful]
-lemma abs_tanh_lt_one (x: ℝ) : |Real.tanh x| < 1 := by
-  sorry
+lemma abs_tanh_lt_one (x : ℝ) : |tanh x| < 1 := by
+  rw [abs_lt]
+  constructor
+  · exact minus_one_lt_tanh x
+  · exact tanh_lt_one x
 
 /-- The derivative of tanh(x) is 1 - tanh(x)^2 -/
 @[sorryful]
@@ -47,9 +45,17 @@ lemma deriv_tanh (x: ℝ) : deriv Real.tanh = fun x => 1 - Real.tanh x ^ 2 := by
   sorry
 
 /-- Tanh(x) is n times continuously differentiable for all n -/
-@[sorryful]
-lemma contDiff_tanh {n : ℕ} : ContDiff ℝ n Real.tanh := by
-  sorry
+lemma contDiff_tanh {n : ℕ} : ContDiff ℝ n tanh := by
+  have hdiv : ContDiff ℝ n (fun x => Real.sinh x / Real.cosh x) := by
+    apply ContDiff.div
+    · exact contDiff_sinh
+    · exact contDiff_cosh
+    · intro x
+      exact ne_of_gt (Real.cosh_pos x)
+  conv =>
+    enter [3, x]
+    rw [tanh_eq_sinh_div_cosh]
+  exact hdiv
 
 /-- The nth derivative of Tanh(x) is a polynomial of Tanh(x) -/
 @[sorryful]
