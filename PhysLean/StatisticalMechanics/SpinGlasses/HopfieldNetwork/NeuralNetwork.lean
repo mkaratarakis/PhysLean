@@ -78,7 +78,11 @@ structure State (NN : NeuralNetwork R U σ) where
 @[ext] lemma ext {R U σ : Type} [Zero R] {NN : NeuralNetwork R U σ}
     {s₁ s₂ : NN.State} :
     (∀ u, s₁.act u = s₂.act u) → s₁ = s₂ := by
-  intro h; cases s₁; cases s₂; simp [State.mk.injEq, funext h]; aesop
+  intro h; cases s₁; cases s₂; simp [State.mk.injEq]
+  simp_all only
+  simp_all only [implies_true]
+  ext x : 1
+  simp_all only
 
 namespace State
 variable {NN : NeuralNetwork R U σ}
@@ -106,7 +110,7 @@ def Up (s : NN.State) (p : Params NN) (u : U) : NN.State :=
       have hclosure_all :=
         NN.hpact p.w p.hw p.hw' p.σ p.θ s.act s.hp
       have hclosure := hclosure_all v
-      simp only [dif_pos rfl]
+      simp only
       exact hclosure
     · simp only [dif_neg hv]
       exact s.hp v }
