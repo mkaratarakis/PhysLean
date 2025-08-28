@@ -59,7 +59,7 @@ abbrev HopfieldNetwork (R U : Type) [Field R] [LinearOrder R] [IsStrictOrderedRi
   /- The set of hidden neurons, defined as the empty set. -/
   Uh := ∅
   /- A proof that all neurons are in the universal set. -/
-  hU := by simp only [Set.mem_univ, Set.union_self, Set.union_empty]
+  hU := by simp only [Set.union_self, Set.union_empty]
   /- A proof that the input set is not equal to the empty set. -/
   hUi := Ne.symm Set.empty_ne_univ
   /- A proof that the output set is not equal to the empty set. -/
@@ -165,7 +165,7 @@ def Hebbian {m : ℕ} (ps : Fin m → (HopfieldNetwork R U).State) : Params (Hop
       sub_self]
   /- A proof that the weight matrix is symmetric. -/
   hw' := by
-    simp only [Matrix.IsSymm, Fin.isValue, transpose_sub, transpose_smul, transpose_one, sub_left_inj]
+    simp only [Matrix.IsSymm, transpose_sub, transpose_smul, transpose_one, sub_left_inj]
     rw [isSymm_sum]
     intro k
     refine IsSymm.ext_iff.mpr (fun i j => CommMonoid.mul_comm ((ps k).act j) ((ps k).act i))
@@ -175,7 +175,7 @@ variable (wθ : Params (HopfieldNetwork R U))
 @[simp]
 lemma act_up_def : (s.Up wθ u).act u =
     (if (wθ.θ u : Vector R ((HopfieldNetwork R U).κ2 u)).get 0 ≤ s.net wθ u then 1 else -1) := by
-  simp only [Up, reduceIte, Fin.isValue]
+  simp only [Up, Fin.isValue]
   rfl
 
 @[simp]
@@ -270,10 +270,8 @@ lemma Ew_update_formula_split : s.Ew wθ = (- ∑ v2 ∈ {v2 | v2 ≠ u}, s.Wact
              ∑ v1 : U, ∑ v2 ∈ {v2 | (v2 ≠ v1 ∧ v1 ≠ u) ∧ v2 ≠ u}, s.Wact wθ v1 v2) := ?_
        _ = (- ∑ v2 ∈ {v2 | v2 ≠ u}, s.Wact wθ v2 u) +
             - 1/2 * ∑ v1, (∑ v2 ∈ {v2 | (v2 ≠ v1 ∧ v1 ≠ u) ∧ v2 ≠ u}, s.Wact wθ v1 v2) := ?_
-  · simp only [Ew, mem_filter, mem_univ, true_and, true_implies, mul_sum, and_imp,
-     ← sum_add_distrib, ← sum_split]
-  · simp only [← sum_add_distrib, sum_congr, div_eq_zero_iff, neg_eq_zero,
-      one_ne_zero, OfNat.ofNat_ne_zero, or_self, or_false, ← sum_split]
+  · simp only [Ew, mul_sum, ← sum_add_distrib, ← sum_split]
+  · simp only [← sum_add_distrib, ← sum_split]
   · rw [mul_add, ← add_assoc, add_right_cancel_iff]
 
     have sum_v1_v2_not_eq_v1_eq_u :
@@ -326,7 +324,7 @@ lemma Ew_diff' : (s.Up wθ u).Ew wθ - s.Ew wθ =
     simp only [mem_univ, true_implies]; intro v1
     rw [mul_sum, mul_sum, ← sum_neg_distrib, ← sum_add_distrib, sum_eq_zero]
     simp only [mem_filter, mem_univ, true_and, and_imp]; intro v2 _ hv1 hvneg2
-    simp_all only [Wact, Up, mul_ite, ite_mul, reduceIte, add_neg_cancel]
+    simp_all only [Wact, Up]
     simp only [↓reduceDIte, add_neg_cancel]
   simp only [sub_neg_eq_add]
 
@@ -354,7 +352,7 @@ theorem Eθ_diff : (s.Up wθ u).Eθ wθ - s.Eθ wθ = θ' (wθ.θ u) * ((s.Up w�
   · rw [neg_add_rev, (add_assoc (θ' (wθ.θ u) * (s.Up wθ u).act u +
       ∑ v2 ∈ {v2 | v2 ≠ u}, θ' (wθ.θ v2) * (s.Up wθ u).act v2)
        (-∑ v2 ∈ {v2 | v2 ≠ u}, θ' (wθ.θ v2) * s.act v2) (-(θ' (wθ.θ u) * s.act u))).symm]
-    simp only [add_assoc, add_right_inj, add_eq_left]; nth_rw 2 [θ_stable]
+    simp only [add_assoc]; nth_rw 2 [θ_stable]
     rw [sub_eq_add_neg, mul_add, mul_neg]; simp only [add_neg_cancel_left]
 
 @[simp]
@@ -440,7 +438,7 @@ theorem energy_lt_zero_or_pluses_increase (hc : (s.Up wθ u).act u ≠ s.act u) 
         · split; apply zero_le_one; apply le_refl
         · apply le_refl
     · use u; simp_rw [hactUp, reduceIte]; split
-      · simp_all only [not_true_eq_false]
+      · simp_all only
       · simp only [zero_lt_one, true_and, mem_univ]))
 
 variable (extu : (HopfieldNetwork R U).State) (hext : extu.onlyUi)
@@ -656,7 +654,7 @@ lemma num_of_states_decreases (hs : s < s') :
   simp only [Fintype.card_coe]
   apply Finset.card_lt_card
   rw [Finset.ssubset_iff_of_subset]
-  simp only [mem_filter, mem_univ, true_and, not_lt]
+  simp only [mem_filter, mem_univ, true_and]
   use s; exact ⟨hs, lt_irrefl s⟩
   simp only [Finset.subset_iff, mem_filter, mem_univ, true_and]
   exact fun _ hx => hx.trans hs
@@ -755,7 +753,7 @@ lemma not_stable_implies_sseqm_lt_sseqn_cyclic (useq : ℕ → U) (hf : cyclic u
   have :  seqStates' s useq m' ≤ (seqStates' s useq n) := seqStates_le' s useq n m' hm'
   cases' (le_iff_lt_or_eq.mp this) with h1 h2
   · use m'; constructor; exact hm'; subst hfoo
-    simp_all only [gt_iff_lt, and_self, and_true]
+    simp_all only [and_true]
     rw [le_iff_lt_or_eq]; left; exact hm
   · use m' + 1; simp only [ge_iff_le] at hm'; constructor
     · simp only [ge_iff_le]; exact Nat.le_add_right_of_le hm'
@@ -764,7 +762,7 @@ lemma not_stable_implies_sseqm_lt_sseqn_cyclic (useq : ℕ → U) (hf : cyclic u
       · calc _ < _ := ?_
              _ = _ := h2
         · apply update_less' (seqStates' s useq m')
-          intro a; simp_all only [not_true_eq_false]
+          intro a; simp_all only
 
 @[simp]
 lemma num_of_states_leq_c_implies_stable_sseq_cyclic (s : State' wθ) (useq : ℕ → U)
@@ -859,9 +857,9 @@ lemma patterns_pairwise_orthogonal {m : ℕ}
   intros k
   ext t
   unfold Hebbian
-  simp only [sub_apply, smul_apply, smul_eq_mul]
+  simp only
   rw [mulVec, dotProduct]
-  simp only [sub_apply, smul_apply, smul_eq_mul, Pi.natCast_def, Pi.mul_apply, Pi.sub_apply]
+  simp only [sub_apply, smul_apply, smul_eq_mul]
   rw [Finset.sum_apply]
   simp only [Finset.sum_apply]
   unfold dotProduct at horth
@@ -869,11 +867,11 @@ lemma patterns_pairwise_orthogonal {m : ℕ}
     intros i j
     by_cases h : i ≠ j
     · specialize horth h
-      simp_all only [ne_eq, not_false_eq_true, reduceIte, Nat.cast_zero]
+      simp_all only [ne_eq, not_false_eq_true, reduceIte]
       assumption
     · simp only [Decidable.not_not] at h
       nth_rw 1 [h]
-      simp only [ite_not, Nat.cast_ite, Nat.cast_zero]
+      simp only [ite_not]
       refine eq_ite_iff.mpr ?_
       left
       constructor
@@ -885,8 +883,8 @@ lemma patterns_pairwise_orthogonal {m : ℕ}
              _ = ∑ i, 1 * 1 := by simp_rw [hact1]; rw [mul_one]
              _ = (card U : R) := by
                   -- sum of 1 over all i in U is card U, cast to R
-                  simp only [sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one, Nat.cast_ofNat]
-  simp only [dotProduct, ite_not, Nat.cast_ite, Nat.cast_zero] at this
+                  simp only [sum_const, card_univ, nsmul_eq_mul, mul_one]
+  simp only [dotProduct, ite_not] at this
   conv => enter [1,2]; ext l; rw [sub_mul]; rw [sum_mul]; conv => enter [1,2]; ext i; rw [mul_assoc]
   rw [Finset.sum_sub_distrib]
   nth_rw 1 [sum_comm]
@@ -898,8 +896,8 @@ lemma patterns_pairwise_orthogonal {m : ℕ}
   · simp only [sub_left_inj]; rw [Finset.sum_congr rfl]
     exact fun x _ => (mul_sum univ (fun i => (ps x).act i * (ps k).act i) ((ps x).act t)).symm
   · simp only [sub_left_inj]; rw [Finset.sum_congr rfl]; intros i _
-    simp_all only [reduceIte, implies_true, mem_univ, mul_ite, mul_zero, ite_not, Nat.cast_ite, Nat.cast_zero]
-  · simp only [ite_not, Nat.cast_ite, Nat.cast_zero, mul_ite, mul_zero, Finset.sum_ite_eq', mem_univ, reduceIte]
+    simp_all only [reduceIte, implies_true, mem_univ, mul_ite, mul_zero, ite_not]
+  · simp only [ite_not, mul_ite, mul_zero, Finset.sum_ite_eq', mem_univ, reduceIte]
     conv => enter [1,2,2]; ext k; rw [mul_assoc]
     rw [← mul_sum, mul_comm]
     simp only [one_apply, ite_mul, one_mul, zero_mul, Finset.sum_ite_eq, mem_univ, reduceIte]
@@ -911,7 +909,7 @@ lemma stateisStablecondition {m : ℕ}
   (hw : ∀ u, ((Hebbian ps).w).mulVec s.act u = c * s.act u) : s.isStable (Hebbian ps) := by
   intros u
   unfold State.Up
-  simp only [reduceIte, Fin.isValue]
+  simp only [Fin.isValue]
   rw [HNfnet_eq]
   simp_rw [mulVec, dotProduct] at hw u
   refine ite_eq_iff.mpr ?_
@@ -922,12 +920,11 @@ lemma stateisStablecondition {m : ℕ}
   · right; rw [h2]; constructor
     · change ¬ 0 ≤ _
       rw [le_iff_lt_or_eq]
-      simp only [Left.neg_pos_iff, zero_eq_neg, not_or, not_lt]
+      simp only [not_or, not_lt]
       constructor
       · rw [le_iff_lt_or_eq]; left;
         simpa only [hw, h2, mul_neg, mul_one, Left.neg_neg_iff]
-      · simp_all only [List.length_nil, Nat.succ_eq_add_one,
-        Nat.reduceAdd, mul_neg, mul_one, Fin.isValue, zero_eq_neg]
+      · simp_all only [mul_neg, mul_one, zero_eq_neg]
         exact ne_of_gt hc
     · rfl
   exact (Hebbian ps).hw u u fun a => a rfl
