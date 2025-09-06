@@ -708,13 +708,6 @@ open scoped ENNReal NNReal BigOperators
 open NeuralNetwork
 namespace TwoState
 
---variable {R U σ : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
-/-!
-Fix: strengthen the typeclass assumptions in the final section (they were only `[Zero R]`)
-and specialize to `R = ℝ` so that `EnergySpec` (which requires ordered field structure)
-is usable. Then provide a complete implementation of
-`EnergySpec.energy_order_from_flip_id` (previous version failed due to missing instances).
--/
 
 lemma updPos_eq_self_of_act_pos
     {R U σ} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
