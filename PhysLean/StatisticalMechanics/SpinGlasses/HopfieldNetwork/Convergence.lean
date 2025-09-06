@@ -509,9 +509,8 @@ theorem convergence_of_hamiltonian [Fintype NN.State] [IsStrictlyHamiltonian NN]
 /-
 ### Instantiating the Framework for `TwoStateNeuralNetwork`
 
-Now, we need to prove that our concrete models satisfy this powerful new contract.
+Now, we need to prove that our concrete models satisfy this general contract. -/
 
--/-- In PhysLean/StatisticalMechanics/SpinGlasses/HopfieldNetwork/TwoState.lean
 open TwoState
 /--
 An auxiliary potential for `TwoStateNeuralNetwork`s, defined as the negated sum
@@ -745,16 +744,3 @@ noncomputable instance IsStrictlyHamiltonian_of_TwoState_EnergySpec
     have h_card : A_new.card < A_old.card := Finset.card_lt_card h_ss
     unfold twoStateAuxPotential
     simp [mags, m_old, m_new, A_old, A_new, s', mag, h_card]
-
-/-
-### The Revised Paper: A Masterpiece Narrative
-
-With this refactored formalization, the paper's story becomes incredibly compelling and cohesive.
-
-*   **Abstract & Intro:** Now clearly state that the framework's power is demonstrated by proving that an abstract physical property (`IsStrictlyHamiltonian`) implies a concrete algorithmic guarantee (termination), which is then instantiated for the Hopfield model.
-*   **Section on `IsStrictlyHamiltonian`:** This becomes the central theoretical section, explaining the physical intuition behind the two potentials.
-*   **Main Theorem 1 (Convergence):** You present the general, abstract theorem `convergence_of_hamiltonian`. This is clean, powerful, and easy to understand.
-*   **Instantiating the Theory:** You then show how `SymmetricBinary` is proven to be an `instance IsStrictlyHamiltonian`, thereby inheriting the convergence theorem automatically. This is the "Aha!" moment for the reader.
-*   **`#eval`:** The execution is now a test of a *certified instance* of a general theorem, which is a much stronger claim.
-
-This approach resolves all ambiguities, corrects the logical disconnect, and presents a mature, insightful, and deeply unified piece of work that is perfectly suited for CPP and its distinguished paper award.-/

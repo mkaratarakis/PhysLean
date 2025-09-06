@@ -7,8 +7,8 @@ open MeasureTheory
 # The Bridge from Neural Networks to Statistical Mechanics
 
 This file defines the `IsHamiltonian` typeclass, which provides the formal bridge
-between the constructive, algorithmic definition of a `NeuralNetwork` (Layer 4)
-and the physical, probabilistic framework of a `CanonicalEnsemble` (Layer 2).
+between the constructive, algorithmic definition of a `NeuralNetwork`
+and the physical, probabilistic framework of a `CanonicalEnsemble`.
 -/
 
 /-- For any finite-state neural network we use the trivial (⊤) measurable space. -/
@@ -62,10 +62,10 @@ noncomputable def toCanonicalEnsemble
 --variable {NN : NeuralNetwork ℝ U σ} [TwoStateNeuralNetwork NN]
 
 /-
-This instance is the formal bridge. It is a theorem stating that any `NeuralNetwork`
+This instance is a theorem stating that any `NeuralNetwork`
 for which we can provide an `EnergySpec` is guaranteed to be an `IsHamiltonian` system.
 
-Lean's typeclass system will use this instance automatically. If you define an `EnergySpec`
+Lean's typeclass system will use this instance automatically. If we define an `EnergySpec`
 for a network, Lean will now know that it is also `IsHamiltonian`.
 -/
 
@@ -132,7 +132,7 @@ instance signumExclusive (U) [Fintype U] [DecidableEq U] [Nonempty U] :
   pact_iff a := by
     -- pact is `True`; every `a` is either `pos` or `neg` by exhaustive cases.
     cases a <;> simp [TwoState.SymmetricSignum]
-    all_goals aesop
+    all_goals rfl
 
 end TwoState
 
@@ -156,7 +156,6 @@ instance IsHamiltonian_of_EnergySpec'
     simp
   energy_is_lyapunov := by
     intro p s u
-    classical
     have hcur :=
       (TwoStateExclusive.pact_iff (NN:=NN) (a:=s.act u)).1 (s.hp u)
     exact TwoState.EnergySpec'.energy_is_lyapunov_at_site''
@@ -251,7 +250,6 @@ lemma hopfieldCE_meanEnergy_const
     (hE : ∀ s, IsHamiltonian.energy (U:=U) (σ:=σ) (NN:=NN) p s = c)
     (T : Temperature) :
     (hopfieldCE (U:=U) (σ:=σ) NN p).meanEnergy T = c := by
-  classical
   set 𝓒 := hopfieldCE (U:=U) (σ:=σ) NN p
   have hZeq :
       𝓒.mathematicalPartitionFunction T
@@ -296,7 +294,9 @@ lemma hopfieldCE_meanEnergy_const
         0 < (Fintype.card NN.State : ℝ) * Real.exp (-(T.β : ℝ) * c) :=
       mul_pos hcard (Real.exp_pos _)
     simp [hZeq]
-  aesop
+  simp_all only [neg_mul, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ne_eq, mul_eq_zero, Nat.cast_eq_zero,
+    Fintype.card_ne_zero, Real.exp_ne_zero, or_self, not_false_eq_true, toCanonicalEnsemble_energy, integral_const,
+    measureReal_univ_eq_one, smul_eq_mul, one_mul, 𝓒]
 
 -- Inheritance showcase: canonical–ensemble facts usable for Hopfield networks.
 section CanonicalEnsembleInheritanceExamples

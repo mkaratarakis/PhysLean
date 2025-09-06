@@ -559,7 +559,7 @@ lemma gibbsSweep_cons
 
 /-- **Energy specification bundling a global energy and a local field**.
 
-This abstracts the thermodynamic view:
+This abstracts the thermodynamic view at the `R` level :
 - `E p s` is the global energy of state `s` under parameters `p`;
 - `localField p s u` is the local field at site `u` in state `s`.
 -  The specification `localField_spec` connects the local field to the
@@ -821,7 +821,7 @@ section ConcreteLyapunov
 variable {U : Type} [Fintype U] [DecidableEq U] [Nonempty U]
 
 -- Note: The following lemmas are specialized for `SymmetricBinary ℝ U`
--- to simplify the proof development by avoiding universe polymorphism issues.
+-- to simplify the proof development by avoiding universe polymorphism.
 
 lemma updPos_eq_self_of_act_pos_binary
     (s : (SymmetricBinary ℝ U).State) (u : U)

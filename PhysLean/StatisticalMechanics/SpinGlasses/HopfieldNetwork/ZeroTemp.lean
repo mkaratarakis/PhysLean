@@ -29,7 +29,6 @@ limit as `β → ∞` (equivalently, `T → 0+`).
 
 ## Key definitions and lemmas
 
-
 - Convergence to zero temperature:
   * `scale_pos f`: positivity of `scale f` under an injective order embedding.
   * `zeroTempLimitPMF p s u : PMF State`: the `T → 0+` limit kernel.
@@ -110,8 +109,7 @@ lemma scale_pos
     h (TwoStateNeuralNetwork.m_order (NN:=NN))
   exact sub_pos.mpr himg
 
-/-- One-step zero-temperature limit kernel (tie -> 1/2 mixture of updPos/updNeg).
-(Tie branch rewritten to use `if b then … else …` so the Bernoulli helper lemmas apply.) -/
+/-- One-step zero-temperature limit kernel (tie -> 1/2 mixture of updPos/updNeg).-/
 noncomputable def zeroTempLimitPMF
     (p : Params NN) (s : NN.State) (u : U) : PMF NN.State :=
   let net := s.net p u
@@ -137,7 +135,7 @@ private lemma updPos_ne_updNeg (s : NN.State) (u : U) :
 
 /-
   General limit lemmas for reals, used to analyze the zero-temperature limit.
-  These are independent of the neural-network context (mathlib-ready).
+  These are independent of the neural-network context.
 -/
 open Real Filter Topology Monotone
 
@@ -235,9 +233,8 @@ lemma tendsto_logistic_const_mul_coeNNReal
         funext b; simp [hc0, logisticProb, Real.exp_zero, one_add_one_eq_two]
       aesop
 
-omit [DecidableEq U] [Fintype U] [Nonempty U] in
 /-- Real-valued probability limit P(T) for our model as T → 0+. -/
-private lemma tendsto_probPos_at_zero
+lemma tendsto_probPos_at_zero
     {F} [FunLike F R ℝ] [RingHomClass F R ℝ] [OrderHomClass F R ℝ]
     (f : F) (_ : Function.Injective f)
     (p : Params NN) (s : NN.State) (u : U) :
@@ -258,7 +255,7 @@ private lemma tendsto_probPos_at_zero
       simp [Temperature.β, Temperature.toReal, Real.toNNReal_of_nonneg hT0, one_div]
     unfold probPos
     simp [this, logisticProb, mul_comm, mul_assoc, div_eq_mul_inv]
-    aesop
+    simp_all only [Set.mem_Ioi, one_div, mul_inv_rev, map_sub, true_or, L]
   have hlim :
       Tendsto (fun T : ℝ =>
         logisticProb (((scale (NN:=NN) (f:=f)) / kB) * (f L) / T))
@@ -271,12 +268,11 @@ private lemma tendsto_probPos_at_zero
 open PMF
 
 /-- Pointwise evaluation at `updPos`: exact equality with `probPos`. (Fixed bernoulli usage.) -/
-private lemma gibbsUpdate_apply_updPos
+lemma gibbsUpdate_apply_updPos
     {F} [FunLike F R ℝ] [RingHomClass F R ℝ]
     (f : F) (p : Params NN) (T : Temperature) (s : NN.State) (u : U) :
     (gibbsUpdate (NN:=NN) f p T s u) (updPos (s:=s) (u:=u))
       = ENNReal.ofReal (probPos (NN:=NN) f p T s u) := by
-  classical
   unfold gibbsUpdate
   set pPos : ℝ := probPos (NN:=NN) f p T s u
   have hPos_nonneg : 0 ≤ pPos := probPos_nonneg (NN:=NN) f p T s u
@@ -287,17 +283,19 @@ private lemma gibbsUpdate_apply_updPos
   have hne := updPos_ne_updNeg (s:=s) (u:=u)
   have hcoe : (q : ℝ≥0∞) = ENNReal.ofReal pPos := by
     simp [q, pPos, ENNReal.ofReal]
-    aesop
+    simp_all only [ne_eq, pPos, q]
+    ext : 1
+    simp_all only [NNReal.coe_mk, coe_toNNReal', left_eq_sup]
+    exact hPos_nonneg
   simp [q, hcoe, PMF.bernoulli_bind_pure_apply_left_of_ne (α:=NN.State) hq_le hne,
         pPos]
 
 /-- Pointwise evaluation at `updNeg`: exact equality with `1 - probPos`. -/
-private lemma gibbsUpdate_apply_updNeg
+lemma gibbsUpdate_apply_updNeg
     {F} [FunLike F R ℝ] [RingHomClass F R ℝ]
     (f : F) (p : Params NN) (T : Temperature) (s : NN.State) (u : U) :
     (gibbsUpdate (NN:=NN) f p T s u) (updNeg (s:=s) (u:=u))
       = ENNReal.ofReal (1 - probPos (NN:=NN) f p T s u) := by
-  classical
   unfold gibbsUpdate
   set pPos : ℝ := probPos (NN:=NN) f p T s u
   have hPos_nonneg : 0 ≤ pPos := probPos_nonneg (NN:=NN) f p T s u
@@ -308,7 +306,10 @@ private lemma gibbsUpdate_apply_updNeg
   have hne := updPos_ne_updNeg (s:=s) (u:=u)
   have hcoe : (q : ℝ≥0∞) = ENNReal.ofReal pPos := by
     simp [q, pPos, ENNReal.ofReal]
-    aesop
+    simp_all only [ne_eq, pPos, q]
+    ext : 1
+    simp_all only [NNReal.coe_mk, coe_toNNReal', left_eq_sup]
+    exact hPos_nonneg
   have hEval :
       ((PMF.bernoulli q hq_le) >>= fun b =>
         if b then PMF.pure (updPos (s:=s) (u:=u)) else PMF.pure (updNeg (s:=s) (u:=u)))
@@ -318,7 +319,12 @@ private lemma gibbsUpdate_apply_updNeg
   have h_sub :
       ((1 : ℝ≥0) - q : ℝ≥0) = ⟨1 - pPos, by
         have : 0 ≤ 1 - pPos := sub_nonneg.mpr hPos_le_one
-        simpa [q] using this⟩ := by aesop
+        simpa [q] using this⟩ := by
+          simp_all only [ne_eq, not_false_eq_true, bernoulli_bind_pure_apply_right_of_ne,
+            ENNReal.coe_sub, ENNReal.coe_one, q, pPos]
+          simp_all only [q, pPos]
+          ext : 1
+          simp_all only [NNReal.coe_sub, NNReal.coe_one, NNReal.coe_mk]
   have hENN :
       ((1 : ℝ≥0) - (q : ℝ≥0) : ℝ≥0∞)
         = ENNReal.ofReal (1 - pPos) := by
@@ -347,7 +353,7 @@ lemma eventually_eval_updNeg_eq_ofReal_one_sub_probPos
   refine Filter.Eventually.of_forall ?_
   intro b; simp [gibbsUpdate_apply_updNeg]
 
-private lemma zeroTempLimitPMF_updPos_eval_pos
+lemma zeroTempLimitPMF_updPos_eval_pos
     (p : Params NN) (s : NN.State) (u : U)
     {net θ : R} (h : θ < net)
     (hnet : net = s.net p u)
@@ -357,7 +363,7 @@ private lemma zeroTempLimitPMF_updPos_eval_pos
   unfold zeroTempLimitPMF
   simp [h]
 
-private lemma zeroTempLimitPMF_updPos_eval_neg
+lemma zeroTempLimitPMF_updPos_eval_neg
     (p : Params NN) (s : NN.State) (u : U)
     {net θ : R} (h : net < θ)
     (hnet : net = s.net p u)
@@ -371,7 +377,7 @@ private lemma zeroTempLimitPMF_updPos_eval_neg
     updPos_ne_updNeg (s:=s) (u:=u)
   simp [h, h₁, hne]
 
-private lemma zeroTempLimitPMF_updPos_eval_tie
+lemma zeroTempLimitPMF_updPos_eval_tie
     (p : Params NN) (s : NN.State) (u : U)
     {net θ : R} (h : net = θ)
     (hnet : net = s.net p u)
@@ -388,17 +394,6 @@ private lemma zeroTempLimitPMF_updPos_eval_tie
     updPos_ne_updNeg (s:=s) (u:=u)
   have hp : ( (1/2 : ℝ≥0) ≤ 1 ) := by norm_num
   simp [h', hne]
-
-/-- Helper: real piecewise {1,0,1/2} driven by the sign of a real. -/
-@[simp] lemma piecewise_sign_eval (x : ℝ) :
-    (if 0 < x then 1 else if x < 0 then 0 else (1/2 : ℝ)) =
-      (if x > 0 then 1 else if x < 0 then 0 else (1/2 : ℝ)) := by
-  by_cases hpos : 0 < x
-  · simp [hpos]
-  · by_cases hneg : x < 0
-    · simp [hpos, hneg]
-    · have : x = 0 := le_antisymm (le_of_not_gt hpos) (le_of_not_gt hneg)
-      simp [this]
 
 variable {F} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
 variable [DecidableEq U] [Fintype U] [Nonempty U]
@@ -465,7 +460,7 @@ lemma zeroTemp_target_updPos_as_ofReal_sign
     have h_rhs_arg := neg_of_net_lt_theta (NN:=NN) (f:=f) hf net θ hgt
     simp [h_lhs, h_rhs_arg, not_lt.mpr h_rhs_arg.le]
 
-private lemma zeroTemp_target_updNeg_as_ofReal_one_sub_sign_pos
+lemma zeroTemp_target_updNeg_as_ofReal_one_sub_sign_pos
     {F} [FunLike F R ℝ] [RingHomClass F R ℝ] [OrderHomClass F R ℝ]
     (f : F) (hf : Function.Injective f)
     (p : Params NN) (s : NN.State) (u : U)
@@ -478,7 +473,6 @@ private lemma zeroTemp_target_updNeg_as_ofReal_one_sub_sign_pos
               else if ((scale (NN:=NN) (f:=f)) / kB) * f (net - θ) < 0 then 0
               else (1/2 : ℝ))) := by
   subst hnet; subst hθ
-  classical
   have hLpos : 0 < (s.net p u) - (p.θ u).get _ := sub_pos.mpr hpos
   have hfpos : 0 < f ((s.net p u) - (p.θ u).get _) :=
     map_pos_of_pos (R:=R) (f:=f) hf hLpos
@@ -490,7 +484,11 @@ private lemma zeroTemp_target_updNeg_as_ofReal_one_sub_sign_pos
   have hne := updPos_ne_updNeg (s:=s) (u:=u)
   have hnot : ¬ s.net p u < (p.θ u).get _ := not_lt.mpr hpos.le
   simp [zeroTempLimitPMF, hpos]
-  aesop
+  simp_all only [sub_pos, map_sub, mul_pos_iff_of_pos_left, ne_eq, not_lt, ↓reduceIte, sub_self, ENNReal.ofReal_zero,
+    ite_eq_right_iff, one_ne_zero, imp_false]
+  apply Aesop.BuiltinRules.not_intro
+  intro a
+  simp_all only [not_true_eq_false]
 
 /-! ### Helpers for the `updNeg` zero-temperature targets -/
 
@@ -517,41 +515,38 @@ lemma scaledField_zero_imp_piece_half
   simp [hx]
 
 /-!  Focused evaluation lemmas for zeroTempLimitPMF at `updNeg`.  -/
-private lemma zeroTempLimitPMF_updNeg_eval_neg
+lemma zeroTempLimitPMF_updNeg_eval_neg
     (p : Params NN) (s : NN.State) (u : U)
     {net θ : R} (hneg : net < θ)
     (hnet : net = s.net p u)
     (hθ   : θ   = (p.θ u).get (TwoStateNeuralNetwork.θ0 (NN:=NN) u)) :
     (zeroTempLimitPMF (NN:=NN) p s u) (updNeg (s:=s) (u:=u)) = 1 := by
   subst hnet; subst hθ
-  classical
   unfold zeroTempLimitPMF
   have : ¬ ((p.θ u).get (TwoStateNeuralNetwork.θ0 (NN:=NN) u) < s.net p u) :=
     not_lt.mpr hneg.le
   simp [this, hneg]
 
-private lemma zeroTempLimitPMF_updNeg_eval_pos
+lemma zeroTempLimitPMF_updNeg_eval_pos
     (p : Params NN) (s : NN.State) (u : U)
     {net θ : R} (hpos : θ < net)
     (hnet : net = s.net p u)
     (hθ   : θ   = (p.θ u).get (TwoStateNeuralNetwork.θ0 (NN:=NN) u)) :
     (zeroTempLimitPMF (NN:=NN) p s u) (updNeg (s:=s) (u:=u)) = 0 := by
   subst hnet; subst hθ
-  classical
   unfold zeroTempLimitPMF
   have hne : updNeg (NN:=NN) (s:=s) (u:=u) ≠ updPos (NN:=NN) (s:=s) (u:=u) := by
     have h := updPos_ne_updNeg (NN:=NN) (s:=s) (u:=u)
     simpa [ne_comm] using h
   simp [hpos, hne]
 
-private lemma zeroTempLimitPMF_updNeg_eval_tie
+lemma zeroTempLimitPMF_updNeg_eval_tie
     (p : Params NN) (s : NN.State) (u : U)
     {net θ : R} (htie : net = θ)
     (hnet : net = s.net p u)
     (hθ   : θ   = (p.θ u).get (TwoStateNeuralNetwork.θ0 (NN:=NN) u)) :
     (zeroTempLimitPMF (NN:=NN) p s u) (updNeg (s:=s) (u:=u)) = (1/2 : ℝ≥0∞) := by
   subst hnet; subst hθ
-  classical
   unfold zeroTempLimitPMF
   have h1 : ¬ ((p.θ u).get (TwoStateNeuralNetwork.θ0 (NN:=NN) u) <
               s.net p u) := by simp [htie]
@@ -561,7 +556,7 @@ private lemma zeroTempLimitPMF_updNeg_eval_tie
   have hp : ((1/2 : ℝ≥0) ≤ 1) := by norm_num
   simp [htie, hne]
 
-private lemma zeroTemp_target_updNeg_as_ofReal_one_sub_sign_neg
+lemma zeroTemp_target_updNeg_as_ofReal_one_sub_sign_neg
     {F} [FunLike F R ℝ] [RingHomClass F R ℝ] [OrderHomClass F R ℝ]
     (f : F) (hf : Function.Injective f)
     (p : Params NN) (s : NN.State) (u : U)
@@ -575,7 +570,6 @@ private lemma zeroTemp_target_updNeg_as_ofReal_one_sub_sign_neg
               else (1/2 : ℝ))) := by
   have hLHS := zeroTempLimitPMF_updNeg_eval_neg (NN:=NN) p s u hneg hnet hθ
   subst hnet; subst hθ
-  classical
   let θ0 := TwoStateNeuralNetwork.θ0 (NN:=NN) u
   let κ  := scale (NN:=NN) (f:=f)
   let L  : R := s.net p u - (p.θ u).get θ0
@@ -598,7 +592,7 @@ private lemma zeroTemp_target_updNeg_as_ofReal_one_sub_sign_neg
   rw [this, hPiece'']
   simp
 
-private lemma zeroTemp_target_updNeg_as_ofReal_one_sub_sign_tie
+lemma zeroTemp_target_updNeg_as_ofReal_one_sub_sign_tie
     {F} [FunLike F R ℝ] [RingHomClass F R ℝ] [OrderHomClass F R ℝ]
     (f : F) (_ : Function.Injective f)  -- (hf kept for uniform signature; unused here)
     (p : Params NN) (s : NN.State) (u : U)
@@ -612,7 +606,6 @@ private lemma zeroTemp_target_updNeg_as_ofReal_one_sub_sign_tie
               else (1/2 : ℝ))) := by
   have hLHS := zeroTempLimitPMF_updNeg_eval_tie (NN:=NN) p s u htie hnet hθ
   subst hnet; subst hθ
-  classical
   let θ0 := TwoStateNeuralNetwork.θ0 (NN:=NN) u
   let κ  := scale (NN:=NN) (f:=f)
   let L  : R := s.net p u - (p.θ u).get θ0
@@ -632,7 +625,8 @@ private lemma zeroTemp_target_updNeg_as_ofReal_one_sub_sign_tie
   have hxArg :
       (κ / kB) * f (s.net p u - (p.θ u).get θ0) = 0 := by
     simp
-    aesop
+    simp_all only [one_div, sub_self, map_zero, mul_zero, lt_self_iff_false, ↓reduceIte, or_true,
+      L, θ0, κ]
   have hRHS_simp :
       ENNReal.ofReal
         (1 -
@@ -643,8 +637,8 @@ private lemma zeroTemp_target_updNeg_as_ofReal_one_sub_sign_tie
     ENNReal.ofReal_one_sub_signPiece_of_zero hxArg
   exact hLHS.trans hRHS_simp.symm
 
-/-- Reassembled original lemma from the case lemmas. -/
-private lemma zeroTemp_target_updNeg_as_ofReal_one_sub_sign
+/-- main lemmas. -/
+lemma zeroTemp_target_updNeg_as_ofReal_one_sub_sign
     {F} [FunLike F R ℝ] [RingHomClass F R ℝ] [OrderHomClass F R ℝ]
     (f : F) (hf : Function.Injective f)
     (p : Params NN) (s : NN.State) (u : U) :
@@ -653,9 +647,9 @@ private lemma zeroTemp_target_updNeg_as_ofReal_one_sub_sign
     (zeroTempLimitPMF (NN:=NN) p s u) (updNeg (s:=s) (u:=u)) =
       ENNReal.ofReal
         (1 - (if 0 < ((scale (NN:=NN) (f:=f)) / kB) * (f (net - θ))
-              then 1 else if ((scale (NN:=NN) (f:=f)) / kB) * (f (net - θ)) < 0 then 0 else (1/2 : ℝ))) := by
+              then 1 else if ((scale (NN:=NN) (f:=f)) / kB) *
+                (f (net - θ)) < 0 then 0 else (1/2 : ℝ))) := by
   intro net θ
-  classical
   rcases lt_trichotomy θ net with hpos | hEq | hneg
   · -- positive field
     exact zeroTemp_target_updNeg_as_ofReal_one_sub_sign_pos
@@ -668,9 +662,8 @@ private lemma zeroTemp_target_updNeg_as_ofReal_one_sub_sign
     exact zeroTemp_target_updNeg_as_ofReal_one_sub_sign_neg
             (NN:=NN) f hf p s u hneg rfl rfl
 
-omit [DecidableEq U] [Fintype U] [Nonempty U] in
 /-- Real-valued limit along `β (ofβ b) = b`: `probPos` tends to 1/0/1/2 by the sign of `c0`. -/
-private lemma tendsto_probPos_along_ofβ_to_piecewise
+lemma tendsto_probPos_along_ofβ_to_piecewise
     {F} [FunLike F R ℝ] [RingHomClass F R ℝ] [OrderHomClass F R ℝ]
     (f : F) (p : Params NN) (s : NN.State) (u : U) :
     let L := (s.net p u) - (p.θ u).get (TwoStateNeuralNetwork.θ0 (NN:=NN) u)
@@ -694,7 +687,6 @@ lemma gibbs_update_tends_to_zero_temp_limit_apply_updPos
     Tendsto (fun b : ℝ≥0 =>
       (gibbsUpdate (NN:=NN) f p (Temperature.ofβ b) s u) (updPos (s:=s) (u:=u)))
       atTop (𝓝 ((zeroTempLimitPMF (NN:=NN) p s u) (updPos (s:=s) (u:=u)))) := by
-  classical
   have h_target := zeroTemp_target_updPos_as_ofReal_sign (NN:=NN) f hf p s u
   have hev := eventually_eval_updPos_eq_ofReal_probPos (NN:=NN) f p s u
   set net := s.net p u
@@ -710,11 +702,10 @@ lemma gibbs_update_tends_to_zero_temp_limit_apply_updPos
       atTop (𝓝 (ENNReal.ofReal
         (if 0 < ((scale (NN:=NN) (f:=f)) / kB) * (f (net - θ))
          then 1 else if ((scale (NN:=NN) (f:=f)) / kB) * (f (net - θ)) < 0 then 0 else (1/2 : ℝ)))) := by
-    aesop
+    simp_all only [one_div, map_sub, net, θ, L]
   simpa [h_target, net, θ] using h'
 
-/-- Convergence on `updNeg`: short proof using the split helpers.
-(Previously failed because `[Fintype U]` and `[Nonempty U]` were omitted.) -/
+/-- Convergence on `updNeg`: short proof using the split helpers. -/
 lemma gibbs_update_tends_to_zero_temp_limit_apply_updNeg
     {F} [FunLike F R ℝ] [RingHomClass F R ℝ] [OrderHomClass F R ℝ]
     (f : F) (hf : Function.Injective f)
@@ -722,7 +713,6 @@ lemma gibbs_update_tends_to_zero_temp_limit_apply_updNeg
     Tendsto (fun b : ℝ≥0 =>
       (gibbsUpdate (NN:=NN) f p (Temperature.ofβ b) s u) (updNeg (s:=s) (u:=u)))
       atTop (𝓝 ((zeroTempLimitPMF (NN:=NN) p s u) (updNeg (s:=s) (u:=u)))) := by
-  classical
   have h_target := zeroTemp_target_updNeg_as_ofReal_one_sub_sign (NN:=NN) f hf p s u
   have hev := eventually_eval_updNeg_eq_ofReal_one_sub_probPos (NN:=NN) f p s u
   set net := s.net p u
@@ -760,8 +750,8 @@ lemma gibbs_update_tends_to_zero_temp_limit_apply_updNeg
                      then 1 else if ((scale (NN:=NN) (f:=f)) / kB) * (f L) < 0
                                    then 0 else (1/2 : ℝ))))) := by
     have := (tendsto_congr' hev).mpr h_lift
-    aesop
-  aesop
+    aesop?
+  aesop?
 
 /-- Convergence on any “other” state (neither updPos nor updNeg). -/
 lemma gibbs_update_tends_to_zero_temp_limit_apply_other
@@ -774,7 +764,6 @@ lemma gibbs_update_tends_to_zero_temp_limit_apply_other
     Tendsto (fun b : ℝ≥0 =>
       (gibbsUpdate (NN:=NN) f p (Temperature.ofβ b) s u) state)
       atTop (𝓝 ((zeroTempLimitPMF (NN:=NN) p s u) state)) := by
-  classical
   set net := s.net p u
   set θ := (p.θ u).get (TwoStateNeuralNetwork.θ0 (NN:=NN) u)
   have htarget0 :
@@ -807,7 +796,11 @@ lemma gibbs_update_tends_to_zero_temp_limit_apply_other
   simpa [htarget0] using this
 
 /-- **Theorem** Pointwise convergence of the one–site Gibbs PMF to the zero-temperature limit PMF,
-for every state. This wraps the three evaluation lemmas into a single statement. -/
+for every state. This wraps the three evaluation lemmas into a single statement.
+The proof proceeds by case analysis on whether
+the target state is the positive update, negative update, or some other state, applying
+the corresponding specialized convergence results.
+-/
 theorem gibbs_update_tends_to_zero_temp_limit
     {F} [FunLike F R ℝ] [RingHomClass F R ℝ] [OrderHomClass F R ℝ]
     (f : F) (hf : Function.Injective f)
@@ -816,7 +809,6 @@ theorem gibbs_update_tends_to_zero_temp_limit
       Tendsto (fun b : ℝ≥0 =>
         (gibbsUpdate (NN:=NN) f p (Temperature.ofβ b) s u) state)
         atTop (𝓝 ((zeroTempLimitPMF (NN:=NN) p s u) state)) := by
-  classical
   intro state
   by_cases hpos : state = updPos (s:=s) (u:=u)
   · subst hpos

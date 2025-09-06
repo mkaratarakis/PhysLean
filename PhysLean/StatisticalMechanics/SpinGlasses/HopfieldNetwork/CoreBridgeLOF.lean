@@ -1,16 +1,18 @@
 import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.Convergence
 import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.Core
 
-/-!
-Builder: derive `IsStrictlyHamiltonian (HopfieldNetwork R U)` from the *core* flip lemmas
-(without duplicating the earlier hand‑written instance in `CoreBridge'`).
 
-We use this instead of the ad‑hoc instance in `CoreBridge'` so that:
-  * energy = `State.E`
-  * auxPotential = remaining minus spins
-  * proofs reuse `energy_diff_leq_zero` and
-    `energy_lt_zero_or_pluses_increase`.
-Then `CoreBridge'` can just `open` this file (or import) and not redefine the instance.
+/-! ### Propagation explanation
+
+Importing this file yields:
+* `IsHamiltonian (HN)` ⇒ access to canonical ensemble via `CE`.
+* `IsStrictlyHamiltonian (HN)` ⇒ deterministic convergence theorem
+  `convergence_of_hamiltonian` and helper `stabilize`.
+* Detailed-balance / Gibbs results (in other files) become applicable
+  once an `EnergySpec'` is supplied (or via generic two–state bridges).
+
+Core stays computable; only this layer uses (noncomputable) real analysis
+and finite type enumeration of states.
 -/
 
 open NeuralNetwork State Finset
@@ -26,14 +28,14 @@ set_option linter.unusedVariables false in
     (s : (HopfieldNetwork R U).State) : ℕ :=
   Fintype.card U - s.pluses
 
-private lemma plus_indicator_le_one
+lemma plus_indicator_le_one
     (s : (HopfieldNetwork R U).State) (u : U) :
     (if s.act u = (1:R) then 1 else 0) ≤ (1:ℕ) := by
   by_cases h : s.act u = (1:R) <;> simp [h]
 
 /-- Sum of the 0/1 indicators of plus spins equals the cardinality of the finite
 set of sites whose activation is +1 (explicit computable formulation). -/
-private lemma sum_plus_indicators_eq_filter_card
+lemma sum_plus_indicators_eq_filter_card
     (s : (HopfieldNetwork R U).State) :
     (∑ u : U, (if s.act u = (1:R) then 1 else 0))
       = (Finset.univ.filter (fun u : U => s.act u = (1:R))).card := by
@@ -51,7 +53,7 @@ private lemma sum_plus_indicators_eq_filter_card
     · rw [@Finset.card_filter]
 
 /-- Sum of the 0/1 indicators of plus spins is ≤ number of sites. -/
-private lemma sum_plus_indicators_le (s : (HopfieldNetwork R U).State) :
+lemma sum_plus_indicators_le (s : (HopfieldNetwork R U).State) :
     (∑ u : U, (if s.act u = (1:R) then 1 else 0))
       ≤ Fintype.card U := by
   have hEq := sum_plus_indicators_eq_filter_card (s:=s)
@@ -63,13 +65,13 @@ private lemma sum_plus_indicators_le (s : (HopfieldNetwork R U).State) :
   exact card_le_univ {u | s.act u = 1}
 
 /-- Bound: number of plus spins ≤ number of sites. -/
-private lemma pluses_le_card (s : (HopfieldNetwork R U).State) :
+lemma pluses_le_card (s : (HopfieldNetwork R U).State) :
     s.pluses ≤ Fintype.card U := by
   unfold State.pluses
   exact sum_plus_indicators_le (s:=s)
 
 /-- Energy Lyapunov + strict auxiliary decrease on ties (builder lemma). -/
-private lemma hopfield_aux_strict
+lemma hopfield_aux_strict
     (p : Params (HopfieldNetwork R U))
     (s : (HopfieldNetwork R U).State) (u : U)
     (hchg : s.Up p u ≠ s)
@@ -133,7 +135,7 @@ instance instIsStrictlyHamiltonian_Hopfield' :
 
 /-! ### Canonical ensemble and constructive convergence -/
 
-/-- Real-specialized strictly Hamiltonian instance (no `IsStrictOrderedRing ℝ` needed). -/
+/-- Real-specialized strictly Hamiltonian instance. -/
 @[simp] noncomputable
 instance instIsStrictlyHamiltonian_Hopfield_real
   [Fintype U] [Nonempty U] :
@@ -192,16 +194,3 @@ lemma stabilize_isStable
     (stabilize (p:=p) s₀ useq hf).isStable p := by
   simpa [stabilize] using
     (Nat.find_spec (convergence_of_hamiltonian (NN:=HopfieldNetwork ℝ U) s₀ p useq hf))
-
-/-! ### Propagation explanation
-
-Importing this file yields:
-* `IsHamiltonian (HN)` ⇒ access to canonical ensemble via `CE`.
-* `IsStrictlyHamiltonian (HN)` ⇒ deterministic convergence theorem
-  `convergence_of_hamiltonian` and helper `stabilize`.
-* Detailed-balance / Gibbs results (in other files) become applicable
-  once an `EnergySpec'` is supplied (or via generic two–state bridges).
-
-Core stays computable; only this layer uses (noncomputable) real analysis
-and finite type enumeration of states.
--/
