@@ -61,7 +61,6 @@ lemma updateGreedy_fixed_iff_stable (s : (HopfieldNetwork R U).State) :
     intro hs
     simp [updateGreedy, hs]
 
--- Add the missing type alias
 abbrev HState := (HopfieldNetwork R U).State
 
 /-- HopfieldNetwork R U as a Lyapunov structure: energy, greedy update, and the tie-breaker. -/
