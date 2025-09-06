@@ -141,12 +141,10 @@ open TwoState
 variable {U σ : Type} [Fintype U] [DecidableEq U]
 variable {NN : NeuralNetwork ℝ U σ} [TwoStateNeuralNetwork NN]
 
-/-- Generic bridge: any exclusive two–state NN with an `EnergySpec'` is Hamiltonian.
-Added `[Fintype NN.State]` so the `(⊤)` measurable space instance is available,
-fixing the missing `MeasurableSpace NN.State` error. -/
-noncomputable instance IsHamiltonian_of_EnergySpec'
+/-- Generic bridge: any exclusive two–state NN with an `EnergySpec'` is Hamiltonian.  -/
+instance IsHamiltonian_of_EnergySpec'
     (spec : TwoState.EnergySpec' (NN:=NN))
-    [Fintype NN.State]                -- NEW: ensures MeasurableSpace instance via the earlier `[Fintype]` → `⊤`
+    [Fintype NN.State]
     [TwoStateExclusive (NN:=NN)] :
     IsHamiltonian (U:=U) (σ:=σ) NN where
   energy := spec.E
