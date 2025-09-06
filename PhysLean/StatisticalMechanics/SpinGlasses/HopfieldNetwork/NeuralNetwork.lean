@@ -7,7 +7,7 @@ import Mathlib.Combinatorics.Digraph.Basic
 import Mathlib.Data.Matrix.Basic
 import Mathlib.Data.Vector.Basic
 
-open Mathlib Finset
+open Finset
 
 universe uR uU uσ
 
@@ -127,5 +127,28 @@ def seqStates (useq : ℕ → U) : ℕ → NN.State
 /-- A state is stable if every single–site update leaves the site unchanged. -/
 def isStable : Prop := ∀ u : U, (Up s p u).act u = s.act u
 
-end State
-end NeuralNetwork
+/-! ### Synchronous update -/
+
+/-- Synchronous (parallel) update: recompute all neurons simultaneously using the current state `s`.
+The state at time t+1 depends entirely on the state at time t. (e.g., Little model, Cellular Automata).
+-/
+def UpSync (s : NN.State) (p : Params NN) : NN.State :=
+{ act := fun u =>
+    -- The computation uses the state 's' (time t) to calculate all new activations (time t+1).
+    NN.fact u (s.act u)
+      (NN.fnet u (p.w u) (fun n => NN.fout n (s.act n)) (p.σ u))
+      (p.θ u)
+, hp := by
+    intro u
+    -- The hpact property guarantees closure under simultaneous updates.
+    exact NN.hpact p.w p.hw p.hw' p.σ p.θ s.act s.hp u }
+
+/-- Iterated sequence of parallel updates (Synchronous dynamics). -/
+def seqStatesSync (p : Params NN) (s : NN.State) : ℕ → NN.State
+  | 0     => s
+  | n + 1 => UpSync (seqStatesSync p s n) p
+
+/-- A state is stable (fixed point) under synchronous updates. -/
+def isStableSync (p : Params NN) (s : NN.State) : Prop := UpSync s p = s
+
+end NeuralNetwork.State

@@ -1,6 +1,6 @@
 import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.BoltzmannMachine
-import PhysLean.StatisticalMechanics.CanonicalEnsemble.Finite
-import PhysLean.StatisticalMechanics.CanonicalEnsemble.Lemmas
+
+set_option linter.unusedSectionVars false
 
 -- We provide a finite canonical ensemble instance for the Hopfield Boltzmann construction.
 instance
@@ -9,16 +9,14 @@ instance
   [TwoStateNeuralNetwork NN] [TwoState.TwoStateExclusive NN]
   (spec : TwoState.EnergySpec' (NN:=NN)) (p : Params NN) :
   CanonicalEnsemble.IsFinite (HopfieldBoltzmann.CEparams (NN:=NN) (spec:=spec) p) := by
-  classical
   have _ : IsHamiltonian (U:=U) (σ:=σ) NN := IsHamiltonian_of_EnergySpec' spec
   dsimp [HopfieldBoltzmann.CEparams]
   infer_instance
 
-variable [Fintype ι] [DecidableEq ι] [Ring R]
+--variable [Fintype ι] [DecidableEq ι] [Ring R]
 open CanonicalEnsemble Constants
 
 section DetailedBalance
-open scoped Classical
 open TwoState HopfieldBoltzmann
 
 variable {U σ : Type} [Fintype U] [DecidableEq U] [Nonempty U]
@@ -34,13 +32,11 @@ local notation "K" => Kbm (NN:=NN) p T
 def DiffAway (u : U) (s s' : NN.State) : Prop :=
   ∃ v, v ≠ u ∧ s.act v ≠ s'.act v
 
-omit [Fintype U] [Nonempty U] [Fintype NN.State] [Nonempty NN.State] [TwoStateExclusive NN] in
 /-- If the states differ away from the update site, both transition probabilities vanish. -/
 lemma Kbm_zero_of_diffAway
     {u : U} {s s' : NN.State}
     (h : DiffAway (NN:=NN) u s s') :
     K (u:=u) s s' = 0 ∧ K (u:=u) s' s = 0 := by
-  classical
   rcases h with ⟨v, hv_ne, hv_diff⟩
   have h_ne_pos  : s' ≠ updPos (NN:=NN) s u := by
     intro h_eq
@@ -76,18 +72,15 @@ lemma Kbm_zero_of_diffAway
     Kbm_apply_other (NN:=NN) (p:=p) (T:=T) u s' s h_ne_pos' h_ne_neg'
   exact ⟨h_forward, h_backward⟩
 
-omit [Nonempty U] [Nonempty NN.State] in
 /-- Detailed balance holds trivially in the “diff-away” case (both transition probabilities
 are 0). -/
 lemma detailed_balance_diffAway
   {u : U} {s s' : NN.State}
   (h : DiffAway (NN:=NN) u s s') :
   P s * K (u:=u) s s' = P s' * K (u:=u) s' s := by
-  classical
   rcases Kbm_zero_of_diffAway (NN:=NN) (p:=p) (T:=T) h with ⟨h1, h2⟩
   simp [h1, h2]
 
-omit [Fintype U] [Nonempty U] [Fintype NN.State] [Nonempty NN.State] in
 /-- Classification of the single-site difference at `u` (exclusive two-state case). -/
 lemma single_site_cases
     {u : U} {s s' : NN.State}
@@ -97,7 +90,6 @@ lemma single_site_cases
        s'.act u = TwoStateNeuralNetwork.σ_neg (NN:=NN))
   ∨ (s.act u = TwoStateNeuralNetwork.σ_neg (NN:=NN) ∧
        s'.act u = TwoStateNeuralNetwork.σ_pos (NN:=NN)) := by
-  classical
   have hx : s.act u ≠ s'.act u := by
     intro hcontra
     apply h_ne
@@ -178,7 +170,7 @@ probPos f p T s     u = logisticProb (-Δ * β)
 probPos f p T sNeg  u = logisticProb (-Δ * β)
 ``` -/
 lemma TwoState.EnergySpec'.probPos_flip_pair
-    {U σ} [Fintype U] [DecidableEq U]
+    {U σ} [Fintype U] [DecidableEq U] [Nonempty U]
     {NN : NeuralNetwork ℝ U σ} [TwoStateNeuralNetwork NN]
     (spec : TwoState.EnergySpec' (NN:=NN))
     (p : Params NN) (T : Temperature) (s : NN.State) (u : U) :
@@ -188,7 +180,6 @@ lemma TwoState.EnergySpec'.probPos_flip_pair
     let Δ    := f (spec.E p sPos - spec.E p sNeg)
     probPos (NN:=NN) f p T s    u = logisticProb (-Δ * (T.β : ℝ)) ∧
     probPos (NN:=NN) f p T sNeg u = logisticProb (-Δ * (T.β : ℝ)) := by
-  classical
   intro f sPos sNeg Δ
   let ES : TwoState.EnergySpec (NN:=NN) :=
     { E                 := spec.E
@@ -227,7 +218,7 @@ lemma TwoState.EnergySpec'.probPos_flip_pair
 Here `ΔE = E s' - E s` with `s' = updPos s u`and `s = updNeg s' u` (i.e. `s` carries σ_neg at `u`,
 `s'` carries σ_pos). -/
 lemma flip_prob_neg_pos
-    {U σ} [Fintype U] [DecidableEq U]
+    {U σ} [Fintype U] [DecidableEq U] [Nonempty U]
     {NN : NeuralNetwork ℝ U σ} [TwoStateNeuralNetwork NN]
     (spec : TwoState.EnergySpec' (NN:=NN))
     (p : Params NN) (T : Temperature)
@@ -238,7 +229,6 @@ lemma flip_prob_neg_pos
     let ΔE := spec.E p s' - spec.E p s
     probPos (NN:=NN) (RingHom.id ℝ) p T s u = logisticProb (-(T.β : ℝ) * ΔE) ∧
     probPos (NN:=NN) (RingHom.id ℝ) p T s' u = logisticProb (-(T.β : ℝ) * ΔE) := by
-  classical
   intro ΔE
   have h_sPos : updPos (NN:=NN) s u = s' := by
     ext v; by_cases hv : v = u
@@ -274,12 +264,12 @@ lemma flip_prob_neg_pos
       (RingHom.id ℝ)
           (spec.E p (updPos (NN:=NN) s' u) - spec.E p (updNeg (NN:=NN) s' u))
         = ΔE := by
-    simp [ΔE, h_s'Pos, h_s'Neg, neg_sub]
+    simp [ΔE, h_s'Pos, h_s'Neg]
   have h2 :
       probPos (NN:=NN) (RingHom.id ℝ) p T s' u
         = logisticProb (-(T.β : ℝ) * ΔE) := by
-    simp [h_prob_s', hΔ₂]
-    ring_nf; aesop
+    subst h_s'Neg
+    simp_all only [RingHom.id_apply, neg_sub, ne_eq, updNeg_act_at_u, neg_mul, ΔE]
   exact ⟨h1, h2⟩
 
 /-- if
@@ -309,21 +299,19 @@ lemma detailed_balance_from_opposite_ratios
       Pfun s' * Kfun s' s
           = (Kfun s s' / Kfun s' s * Pfun s) * Kfun s' s := by simp [hP']
       _ = (Kfun s s' * (Kfun s' s)⁻¹ * Pfun s) * Kfun s' s := by
-            simp [div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc]
+            simp [div_eq_mul_inv, mul_comm, mul_left_comm]
       _ = Kfun s s' * Pfun s * ((Kfun s' s)⁻¹ * Kfun s' s) := by
             ring_nf
       _ = Kfun s s' * Pfun s := by
             simp [hK']
   simpa [mul_comm, mul_left_comm, mul_assoc] using hFinal.symm
 
-omit [Nonempty U] in
 lemma detailed_balance_neg_pos
     {u : U} {s s' : NN.State}
     (h_off : ∀ v ≠ u, s.act v = s'.act v)
     (h_neg : s.act u = TwoStateNeuralNetwork.σ_neg (NN:=NN))
     (h_pos : s'.act u = TwoStateNeuralNetwork.σ_pos (NN:=NN)) :
     P s * K (u:=u) s s' = P s' * K (u:=u) s' s := by
-  classical
   have h_updPos : s' = updPos (NN:=NN) s u := by
     ext v; by_cases hv : v = u
     · subst hv; simp [updPos_act_at_u, h_pos]
@@ -348,7 +336,7 @@ lemma detailed_balance_neg_pos
       (s:=s) (s':=s') (u:=u) h_off h_neg h_pos
   have hKf :
       K (u:=u) s s' = logisticProb (-(T.β : ℝ) * ΔE) := by
-    simp [hK_fwd, hProb_fwd, ΔE, mul_comm, mul_left_comm, mul_assoc]
+    simp [hK_fwd, hProb_fwd, ΔE]
   have hKb :
       K (u:=u) s' s = logisticProb ((T.β : ℝ) * ΔE) := by
     have hbwdprob :
@@ -378,7 +366,6 @@ lemma detailed_balance_neg_pos
   have hKpos : 0 < K (u:=u) s' s := by
     simp [hKb, logisticProb_pos']
   have hPpos : 0 < P s := by
-    classical
     have _ : IsHamiltonian (U:=U) (σ:=σ) NN :=
       IsHamiltonian_of_EnergySpec' (NN:=NN) (spec:=spec)
     set 𝓒 := CEparams (NN:=NN) (spec:=spec) p
@@ -398,7 +385,6 @@ lemma detailed_balance_neg_pos
           (s:=s) (s':=s') (β:=T.β) (ΔE:=ΔE)
           hPratio' hKratio hPpos hKpos
 
-omit [Nonempty U] in
 /-- Symmetric orientation (pos→neg) obtained from `detailed_balance_neg_pos` by swapping `s,s'`. -/
 lemma detailed_balance_pos_neg
     {u : U} {s s' : NN.State}
@@ -406,7 +392,6 @@ lemma detailed_balance_pos_neg
     (h_pos : s.act u = TwoStateNeuralNetwork.σ_pos (NN:=NN))
     (h_neg : s'.act u = TwoStateNeuralNetwork.σ_neg (NN:=NN)) :
     P s * K (u:=u) s s' = P s' * K (u:=u) s' s := by
-  classical
   have hswap :=
     detailed_balance_neg_pos (NN:=NN) (spec:=spec) (p:=p) (T:=T)
       (u:=u) (s:=s') (s':=s)
@@ -416,7 +401,6 @@ lemma detailed_balance_pos_neg
       (h_neg:=h_neg) (h_pos:=h_pos)
   simpa [mul_comm, mul_left_comm, mul_assoc] using hswap.symm
 
-omit [Nonempty U] in
 /--
 **Theorem: Detailed Balance Condition (Reversibility)**.
 The Gibbs update kernel satisfies the detailed balance condition with respect to the
@@ -427,7 +411,6 @@ theorem detailed_balance
     (u : U) (s s' : NN.State) :
     P s * K (u:=u) s s'
       = P s' * K (u:=u) s' s := by
-  classical
   by_cases hDiff : DiffAway (NN:=NN) u s s'
   · exact detailed_balance_diffAway (NN:=NN) (spec:=spec) (p:=p) (T:=T) hDiff
   have h_off : ∀ v ≠ u, s.act v = s'.act v := by
@@ -448,11 +431,11 @@ theorem detailed_balance
 
 end DetailedBalance
 
-variable [Fintype ι] [DecidableEq ι] [Ring R]
+--variable [Fintype ι] [DecidableEq ι] [Ring R]
 open CanonicalEnsemble Constants
 
 section DetailedBalance
-open scoped Classical ENNReal Temperature Constants
+open scoped ENNReal Temperature Constants
 open TwoState Temperature HopfieldBoltzmann ProbabilityTheory
 
 variable {U σ : Type} [Fintype U] [DecidableEq U] [Nonempty U]
@@ -470,7 +453,7 @@ noncomputable def pmfToKernel
 
 /-- Single–site Gibbs kernel at site `u` as a Kernel (uses existing `gibbsUpdate`). -/
 noncomputable def singleSiteKernel
-    (NN : NeuralNetwork ℝ U σ) [Fintype NN.State] [DecidableEq U]
+    (NN : NeuralNetwork ℝ U σ) [Fintype NN.State] [DecidableEq U] [DecidableEq NN.State]
     [MeasurableSpace NN.State] [MeasurableSingletonClass NN.State]
     [TwoStateNeuralNetwork NN]
     (_spec : TwoState.EnergySpec' (NN:=NN)) (p : Params NN) (T : Temperature) (u : U) :
@@ -489,196 +472,18 @@ noncomputable def randomScanKernel
     sitePMF.bind (fun u =>
       TwoState.gibbsUpdate (NN:=NN) (RingHom.id ℝ) p T s u))
 
-section FiniteMeasureAPI
-open scoped Classical
 open MeasureTheory
 
-variable {α : Type*}
-
-/-- On a finite discrete measurable space (⊤ σ–algebra), every set is measurable. -/
-@[simp] lemma measurableSet_univ_of_fintype
-    [Fintype α] [MeasurableSpace α] (hσ : ‹MeasurableSpace α› = ⊤)
-    (s : Set α) : MeasurableSet s := by
-  subst hσ; trivial
-
-/-- For a finite type with counting measure, the (lower) integral
-is the finite sum (specialization of the `tsum` version). -/
-lemma lintegral_count_fintype
-    [MeasurableSpace α] [MeasurableSingletonClass α]
-    [Fintype α] [DecidableEq α]
-    (f : α → ℝ≥0∞) :
-    ∫⁻ x, f x ∂(Measure.count : Measure α) = ∑ x : α, f x := by
-  classical
-  simpa [tsum_fintype] using (MeasureTheory.lintegral_count f)
-
--- Finite-type restricted lintegral as a weighted finite sum (separated lemma).
-lemma lintegral_fintype_measure_restrict
-    {α : Type*}
-    [Fintype α] [DecidableEq α]
-    [MeasurableSpace α] [MeasurableSingletonClass α]
-    (μ : Measure α) (A : Set α)
-    (f : α → ℝ≥0∞) :
-    ∫⁻ x in A, f x ∂μ
-      = ∑ x : α, (if x ∈ A then μ {x} * f x else 0) := by
-  classical
-  have hRestr :
-      ∫⁻ x in A, f x ∂μ
-        = ∑ x : α, f x * (μ.restrict A) {x} := by
-    simpa using (lintegral_fintype (μ:=μ.restrict A) (f:=f))
-  have hSingleton :
-      ∀ x : α, (μ.restrict A) {x} = (if x ∈ A then μ {x} else 0) := by
-    intro x
-    by_cases hx : x ∈ A
-    · have hInter : ({x} : Set α) ∩ A = {x} := by
-        ext y; constructor
-        · intro hy; rcases hy with ⟨hy1, hy2⟩
-          simp at hy1
-          subst hy1
-          simp [hx]
-        · intro hy
-          simp [hy, hx]
-          aesop
-      simp [Measure.restrict_apply, hx, hInter]
-    · have hInter : ({x} : Set α) ∩ A = (∅ : Set α) := by
-        apply Set.eq_empty_iff_forall_notMem.2
-        intro y hy
-        rcases hy with ⟨hy1, hy2⟩
-        have : y = x := by simpa [Set.mem_singleton_iff] using hy1
-        subst this
-        exact hx hy2
-      simp [Measure.restrict_apply, hx, hInter]
-  calc
-    ∫⁻ x in A, f x ∂μ
-        = ∑ x : α, f x * (μ.restrict A) {x} := hRestr
-    _ = ∑ x : α, f x * (if x ∈ A then μ {x} else 0) := by
-          simp [hSingleton]
-    _ = ∑ x : α, (if x ∈ A then μ {x} * f x else 0) := by
-          refine Finset.sum_congr rfl ?_
-          intro x _
-          by_cases hx : x ∈ A
-          · simp [hx, mul_comm]
-          · simp [hx]
-
-/-- Probability measure style formula for a finite type:
-turn a restricted integral into a finite sum with point masses. -/
-lemma lintegral_fintype_prob_restrict
-    [Fintype α] [DecidableEq α] [MeasurableSpace α] [MeasurableSingletonClass α]
-    (μ : Measure α) [IsFiniteMeasure μ]
-    (A : Set α) (f : α → ℝ≥0∞) :
-    ∫⁻ x in A, f x ∂μ
-      = ∑ x : α, (if x ∈ A then μ {x} * f x else 0) := by
-  simpa using lintegral_fintype_measure_restrict μ A f
-
-/-- Restricted version over the counting measure (finite type).  -/
-lemma lintegral_count_restrict
-    [MeasurableSpace α] [MeasurableSingletonClass α] [Fintype α] [DecidableEq α]
-    (A : Set α) (f : α → ℝ≥0∞) :
-    ∫⁻ x in A, f x ∂(Measure.count : Measure α)
-      = ∑ x : α, (if x ∈ A then f x else 0) := by
-  classical
-  have h :=
-    lintegral_fintype_prob_restrict (μ:=(Measure.count : Measure α)) A f
-  have hμ : ∀ x : α, (Measure.count : Measure α) {x} = 1 := by
-    intro x; simp
-  simpa [hμ, one_mul] using h
-
-/-- Convenience rewriting for the specific pattern used in detailed balance proofs:
-move `μ {x}` factor to the left of function argument. -/
-lemma lintegral_restrict_as_sum_if
-    [Fintype α] [DecidableEq α] [MeasurableSpace α] [MeasurableSingletonClass α]
-    (μ : Measure α) (A : Set α)
-    (g : α → ℝ≥0∞) :
-    ∫⁻ x in A, g x ∂μ
-      = ∑ x : α, (if x ∈ A then μ {x} * g x else 0) :=
-  lintegral_fintype_measure_restrict μ A g
-
-end FiniteMeasureAPI
-
-open MeasureTheory Set Finset Kernel TwoState HopfieldBoltzmann
-
-variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
-
-/-- Every subset of a finite type is finite. -/
-lemma Set.finite_of_subsingleton_fintype
-    {γ : Type*} [Fintype γ] (S : Set γ) : S.Finite :=
-  (Set.toFinite _)
-
-namespace ProbabilityTheory
-namespace Kernel
-
-/-- Evaluation lemma for `Kernel.ofFunOfCountable`. Added for convenient rewriting/simp. -/
-@[simp]
-lemma ofFunOfCountable_apply
-    {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
-    [Countable α] [MeasurableSingletonClass α]
-    (f : α → Measure β) (a : α) :
-    (Kernel.ofFunOfCountable f) a = f a := rfl
-
-end Kernel
-end ProbabilityTheory
-
-namespace ProbabilityTheory
-
-open scoped Classical
-open MeasureTheory
-
-variable {U σ : Type}
-variable {NN : NeuralNetwork ℝ U σ} [TwoStateNeuralNetwork NN] [TwoStateExclusive NN]
-variable {spec : TwoState.EnergySpec' (NN:=NN)}
-variable {p : Params NN} {T : Temperature}
-
-section AuxFiniteSum
-
-/-- General finite-type identity:
-a sum over the whole type with an `if … ∈ S` guard can be rewritten
-as a sum over the `Finset` of the elements that satisfy the guard. -/
-lemma Finset.sum_if_mem_eq_sum_filter
-    {α β : Type*} [Fintype α] [DecidableEq α] [AddCommMonoid β]
-    (S : Set α) (f : α → β) :
-    (∑ x : α, (if x ∈ S then f x else 0))
-      = ∑ x ∈ S.toFinset, f x := by
-  classical
-  have h_univ :
-      (∑ x : α, (if x ∈ S then f x else 0))
-        = ∑ x ∈ (Finset.univ : Finset α), (if x ∈ S then f x else 0) := by
-    simp
-  have h_filter :
-      (∑ x ∈ (Finset.univ : Finset α), (if x ∈ S then f x else 0))
-        = ∑ x ∈ (Finset.univ.filter fun x : α => x ∈ S), f x := by
-    simpa using
-      (Finset.sum_filter
-          (s := (Finset.univ : Finset α))
-          (p := fun x : α => x ∈ S)
-          (f := f)).symm
-  have h_ident :
-      (Finset.univ.filter fun x : α => x ∈ S) = S.toFinset := by
-    ext x
-    by_cases hx : x ∈ S
-    · simp [hx, Finset.mem_filter, Set.mem_toFinset]
-    · simp [hx, Finset.mem_filter, Set.mem_toFinset]
-  simp [h_univ, h_filter, h_ident]
-
-lemma Finset.sum_subset_of_subset
-    {α β : Type*} [Fintype α] [DecidableEq α] [AddCommMonoid β]
-    (S : Set α) (f : α → β)
-    (_h₁ : ∀ x, x ∈ S.toFinset → True)
-    (_h₂ : ∀ x, x ∈ S.toFinset → False → False)
-    (_h₃ : ∀ x, x ∈ S.toFinset → True) :
-    (∑ x : α, (if x ∈ S then f x else 0))
-      = ∑ x ∈ S.toFinset, f x :=
-  Finset.sum_if_mem_eq_sum_filter S f
-
-end AuxFiniteSum
+--variable {U σ : Type} [Fintype U] [DecidableEq U] [Nonempty U]
+--variable {NN : NeuralNetwork ℝ U σ} [TwoStateNeuralNetwork NN] [TwoStateExclusive NN]
+--variable {spec : TwoState.EnergySpec' (NN:=NN)}
+--variable {p : Params NN} {T : Temperature}
 
 /-- Uniform random-scan kernel evaluation:
 the kernel probability of a measurable set `B` equals the arithmetic
 average of the single-site kernel probabilities. -/
 lemma randomScanKernel_eval_uniform
-    {U σ : Type} [Fintype U] [DecidableEq U] [Nonempty U]
-    {NN : NeuralNetwork ℝ U σ}
-    [Fintype NN.State] [DecidableEq NN.State]
-    [MeasurableSpace NN.State] [MeasurableSingletonClass NN.State]
-    [TwoStateNeuralNetwork NN] [TwoStateExclusive NN]
+    [DecidableEq NN.State]
     (spec : TwoState.EnergySpec' (NN:=NN))
     (p : Params NN) (T : Temperature)
     (x : NN.State) (B : Set NN.State) (_ : MeasurableSet B) :
@@ -686,81 +491,28 @@ lemma randomScanKernel_eval_uniform
       =
     (∑ u : U, (singleSiteKernel (NN:=NN) spec p T u) x B)
 / (Fintype.card U : ℝ≥0∞) := by
-  classical
   unfold randomScanKernel singleSiteKernel pmfToKernel
-  simp [Kernel.ofFunOfCountable, Kernel.ofFunOfCountable_apply]
-  let sitePMF := PMF.uniformOfFintype U
+  simp [Kernel.ofFunOfCountable]
+  let sitePMF : PMF U := PMF.uniformOfFintype U
   let g : U → PMF NN.State :=
-    fun u ↦ TwoState.gibbsUpdate (NN:=NN) (RingHom.id ℝ) p T x u
+    fun u => TwoState.gibbsUpdate (NN:=NN) (RingHom.id ℝ) p T x u
+  have hBind :
+      (sitePMF.bind g).toMeasure B
+        = ∑ u : U, sitePMF u * (g u).toMeasure B := by
+    have := PMF.toMeasure_bind_fintype (p:=sitePMF) (f:=g) (B:=B)
+    simp_all only [PMF.toMeasure_apply_fintype, PMF.uniformOfFintype_apply, forall_const, sitePMF, g]
+  have hμ : ∀ u : U, sitePMF u = (Fintype.card U : ℝ≥0∞)⁻¹ := by
+    intro u; simp [sitePMF, PMF.uniformOfFintype_apply]
   have hConst :
       (sitePMF.bind g).toMeasure B
-        =
-      (∑ u : U, (g u).toMeasure B)
-/ (Fintype.card U : ℝ≥0∞) := by
-    classical
-    have hμ : ∀ u : U, sitePMF u = (Fintype.card U : ℝ≥0∞)⁻¹ := by
-      intro u; simp [sitePMF, PMF.uniformOfFintype_apply]
-    simp [PMF.toMeasure_apply, tsum_fintype, PMF.bind_apply, hμ,
-          Finset.mul_sum, Finset.sum_mul, Finset.sum_comm,
-          ENNReal.div_eq_inv_mul, Set.indicator_apply,
-          mul_comm, mul_left_comm, mul_assoc] at *
-  aesop
+        = (Fintype.card U : ℝ≥0∞)⁻¹ * ∑ u : U, (g u).toMeasure B := by
+    simp [hBind, hμ, Finset.mul_sum]
+  simpa [ENNReal.div_eq_inv_mul, hμ, Finset.mul_sum,
+        mul_comm, mul_left_comm, mul_assoc] using hConst
 
-end ProbabilityTheory
-
-/-- On a finite (any finite subset) space with measurable singletons, the measure of a finite
-set under a kernel is the finite sum of the singleton masses. -/
-lemma Kernel.measure_eq_sum_finset
-    [DecidableEq α] [MeasurableSingletonClass α]
-    (κ : Kernel β α) (x : β) {B : Set α} (hB : B.Finite) :
-    κ x B = ∑ y ∈ hB.toFinset, κ x {y} := by
-  classical
-  have hBset : B = (hB.toFinset : Finset α).toSet := by
-    ext a; aesop
-  set s : Finset α := hB.toFinset
-  suffices H : κ x s.toSet = ∑ y ∈ s, κ x {y} by aesop
-  refine s.induction_on ?h0 ?hstep
-  · simp
-  · intro a s ha_notin hIH
-    have hDisj : Disjoint ({a} : Set α) s.toSet := by
-      refine disjoint_left.mpr ?_
-      intro y hy_in hy_in_s
-      have : y = a := by simpa using hy_in
-      subst this
-      aesop
-    have hMeas_s : MeasurableSet s.toSet := by
-      refine s.induction_on ?m0 ?mstep
-      · simp
-      · intro b t hb_notin ht
-        simpa [Finset.coe_insert, Set.image_eq_range, Set.union_comm, Set.union_left_comm,
-               Set.union_assoc] using (ht.union (measurableSet_singleton b))
-    have hMeas_a : MeasurableSet ({a} : Set α) := measurableSet_singleton a
-    have hUnion :
-        (insert a s).toSet
-          = ({a} : Set α) ∪ s.toSet := by
-      ext y; by_cases hy : y = a
-      · subst hy; simp
-      · simp [hy]
-    have hAdd :
-        κ x ((insert a s).toSet)
-          = κ x ({a} : Set α) + κ x s.toSet := by
-      rw [← measure_union_add_inter {a} hMeas_s]
-      simp_rw [hUnion, measure_union_add_inter {a} hMeas_s]
-      exact measure_union hDisj hMeas_s
-    have hSum :
-        ∑ y ∈ insert a s, κ x {y}
-          = κ x ({a} : Set α) + ∑ y ∈ s, κ x {y} := by
-      simp [Finset.sum_insert, ha_notin]
-    calc
-      κ x ((insert a s).toSet)
-          = κ x ({a} : Set α) + κ x s.toSet := hAdd
-      _ = κ x ({a} : Set α) + ∑ y ∈ s, κ x {y} := by rw [hIH]
-      _ = ∑ y ∈ insert a s, κ x {y} := by simp [hSum]
-
-omit [Fintype U] [DecidableEq U] [Nonempty U] in
 lemma lintegral_randomScanKernel_as_sum_div
-    (NN : NeuralNetwork ℝ U σ) [Fintype U] [DecidableEq U] [Nonempty U]
-    [Fintype NN.State] [DecidableEq NN.State]
+    (NN : NeuralNetwork ℝ U σ)
+    [Fintype NN.State] [DecidableEq NN.State] [Nonempty NN.State]
     [TwoStateNeuralNetwork NN] [TwoStateExclusive NN]
     (spec : TwoState.EnergySpec' (NN:=NN))
     (p : Params NN) (T : Temperature)
@@ -771,7 +523,6 @@ lemma lintegral_randomScanKernel_as_sum_div
     (∑ u : U,
         ∫⁻ x in A, (singleSiteKernel (NN:=NN) spec p T u) x B ∂π)
 / (Fintype.card U : ℝ≥0∞) := by
-  classical
   letI : MeasurableSpace NN.State := ⊤
   letI : MeasurableSingletonClass NN.State := ⟨fun _ => trivial⟩
   set κ := randomScanKernel (NN:=NN) spec p T
@@ -784,7 +535,7 @@ lemma lintegral_randomScanKernel_as_sum_div
     intro x
     have hx :=
       randomScanKernel_eval_uniform (NN:=NN) (spec:=spec) p T x B hB
-    simp [κ, κu, c, ENNReal.div_eq_inv_mul, hx, mul_comm, mul_left_comm, mul_assoc]
+    simp [κ, κu, c, ENNReal.div_eq_inv_mul, hx]
   have hLHS :
       ∫⁻ x in A, κ x B ∂π
         = c * ∑ u : U, ∫⁻ x in A, (κu u) x B ∂π := by
@@ -795,7 +546,7 @@ lemma lintegral_randomScanKernel_as_sum_div
     calc
       ∫⁻ x in A, κ x B ∂π
           = ∫⁻ x in A, c * (∑ u : U, (κu u) x B) ∂π := by
-              simp [hEval', mul_comm, mul_left_comm, mul_assoc]
+              simp [hEval']
       _ = c * ∫⁻ x in A, (∑ u : U, (κu u) x B) ∂π := by
               erw [← lintegral_const_mul c fun ⦃t⦄ a => _]
               exact fun ⦃t⦄ a => hA
@@ -813,11 +564,10 @@ lemma lintegral_randomScanKernel_as_sum_div
     rw [ENNReal.div_eq_inv_mul]
   aesop
 
-omit [Fintype U] [DecidableEq U] [Nonempty U] in
 /-- Uniform average of reversible single–site kernels is reversible. -/
 lemma randomScanKernel_reversible_of_sites
     (NN : NeuralNetwork ℝ U σ) [Fintype U] [DecidableEq U] [Nonempty U]
-    [Fintype NN.State] [DecidableEq NN.State]
+    [Fintype NN.State] [DecidableEq NN.State] [Nonempty NN.State]
     [TwoStateNeuralNetwork NN] [TwoStateExclusive NN]
     (spec : TwoState.EnergySpec' (NN:=NN))
     (p : Params NN) (T : Temperature)
@@ -827,7 +577,6 @@ lemma randomScanKernel_reversible_of_sites
               (singleSiteKernel (NN:=NN) spec p T u) π) :
     ProbabilityTheory.Kernel.IsReversible
       (randomScanKernel (NN:=NN) spec p T) π := by
-  classical
   letI : MeasurableSpace NN.State := ⊤
   letI : MeasurableSingletonClass NN.State := ⟨fun _ => trivial⟩
   intro A B hA hB
@@ -845,133 +594,12 @@ lemma randomScanKernel_reversible_of_sites
     lintegral_randomScanKernel_as_sum_div (NN:=NN) (spec:=spec) p T π B A hB hA
   simp [hAexpr, hBexpr, hSum]
 
-section ReversibilityFinite
-
-open scoped Classical
-open MeasureTheory
-
-variable {α : Type*}
-variable [Fintype α] [DecidableEq α]
-variable [MeasurableSpace α] [MeasurableSingletonClass α]
-variable (π : Measure α) (κ : Kernel α α)
-
-/-- Finite discrete expansion of a restricted lintegral of a kernel (measurable singletons). -/
-lemma lintegral_kernel_restrict_fintype
-    (A : Set α) :
-    ∫⁻ x in A, κ x A ∂π
-      =
-    ∑ x : α, (if x ∈ A then π {x} * κ x A else 0) := by
-  classical
-  simpa using
-    (lintegral_restrict_as_sum_if (μ:=π) (A:=A) (g:=fun x => κ x A))
-
-/-- Finite discrete reversibility from pointwise detailed balance. -/
-lemma Kernel.isReversible_of_pointwise_fintype
-    (hPoint :
-      ∀ ⦃x y⦄, π {x} * κ x {y} = π {y} * κ y {x})
-    : ProbabilityTheory.Kernel.IsReversible κ π := by
-  classical
-  intro A B hA hB
-  have hFinA : A.Finite := Set.finite_of_subsingleton_fintype A
-  have hFinB : B.Finite := Set.finite_of_subsingleton_fintype B
-  have hAexp :
-      ∫⁻ x in A, κ x B ∂π
-        = ∑ x ∈ hFinA.toFinset, π {x} * κ x B := by
-    have h1 :
-        ∫⁻ x in A, κ x B ∂π
-          = ∑ x : α,
-              (if x ∈ A then π {x} * κ x B else 0) := by
-      simpa using
-        (lintegral_restrict_as_sum_if (μ:=π) (A:=A) (g:=fun x => κ x B))
-    have :
-        (∑ x : α, (if x ∈ A then π {x} * κ x B else 0))
-          =
-        ∑ x ∈ hFinA.toFinset, π {x} * κ x B := by
-      classical
-      simp_rw
-        [(ProbabilityTheory.Finset.sum_if_mem_eq_sum_filter
-            (S:=A) (f:=fun x => π {x} * κ x B))]
-      rw [@toFinite_toFinset]
-    simp [h1, this]
-  have hBexp :
-      ∫⁻ x in B, κ x A ∂π
-        = ∑ x ∈ hFinB.toFinset, π {x} * κ x A := by
-    have h1 :
-        ∫⁻ x in B, κ x A ∂π
-          = ∑ x : α,
-              (if x ∈ B then π {x} * κ x A else 0) := by
-      simpa using
-        (lintegral_restrict_as_sum_if (μ:=π) (A:=B) (g:=fun x => κ x A))
-    have :
-        (∑ x : α, (if x ∈ B then π {x} * κ x A else 0))
-          =
-        ∑ x ∈ hFinB.toFinset, π {x} * κ x A := by
-      classical
-      simp_rw
-        [(ProbabilityTheory.Finset.sum_if_mem_eq_sum_filter
-            (S:=B) (f:=fun x => π {x} * κ x A))]
-      rw [@toFinite_toFinset]
-    simp [h1, this]
-  have hκB :
-      ∀ x, κ x B = ∑ y ∈ hFinB.toFinset, κ x {y} := by
-    intro x; simpa using
-      (Kernel.measure_eq_sum_finset (κ:=κ) x hFinB)
-  have hκA :
-      ∀ x, κ x A = ∑ y ∈ hFinA.toFinset, κ x {y} := by
-    intro x; simpa using
-      (Kernel.measure_eq_sum_finset (κ:=κ) x hFinA)
-  have hL :
-      ∑ x ∈ hFinA.toFinset, π {x} * κ x B
-        =
-      ∑ x ∈ hFinA.toFinset, ∑ y ∈ hFinB.toFinset, π {x} * κ x {y} := by
-    refine Finset.sum_congr rfl ?_
-    intro x hx
-    simp_rw [hκB x, Finset.mul_sum]
-  have hR :
-      ∑ x ∈ hFinB.toFinset, π {x} * κ x A
-        =
-      ∑ x ∈ hFinB.toFinset, ∑ y ∈ hFinA.toFinset, π {x} * κ x {y} := by
-    refine Finset.sum_congr rfl ?_
-    intro x hx
-    simp_rw [hκA x, Finset.mul_sum]
-  erw [hAexp, hBexp, hL, hR]
-  have hRew :
-      ∑ x ∈ hFinA.toFinset, ∑ y ∈ hFinB.toFinset, π {x} * κ x {y}
-        =
-      ∑ x ∈ hFinA.toFinset, ∑ y ∈ hFinB.toFinset, π {y} * κ y {x} := by
-    refine Finset.sum_congr rfl ?_
-    intro x hx
-    refine Finset.sum_congr rfl ?_
-    intro y hy
-    exact hPoint (x:=x) (y:=y)
-  calc
-      ∑ x ∈ hFinA.toFinset, ∑ y ∈ hFinB.toFinset, π {x} * κ x {y}
-          = ∑ x ∈ hFinA.toFinset, ∑ y ∈ hFinB.toFinset, π {y} * κ y {x} := hRew
-      _ = ∑ y ∈ hFinB.toFinset, ∑ x ∈ hFinA.toFinset, π {y} * κ y {x} := by
-            simpa using
-              (Finset.sum_comm :
-                (∑ x ∈ hFinA.toFinset, ∑ y ∈ hFinB.toFinset,
-                    π {y} * κ y {x})
-                  =
-                ∑ y ∈ hFinB.toFinset, ∑ x ∈ hFinA.toFinset,
-                    π {y} * κ y {x})
-      _ = ∑ x ∈ hFinB.toFinset, ∑ y ∈ hFinA.toFinset, π {x} * κ x {y} := rfl
-
-end ReversibilityFinite
-
-/-- Singleton evaluation of a PMF turned into a measure. -/
-@[simp]
-lemma PMF.toMeasure_singleton
-    {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
-    (p : PMF α) (a : α) :
-    p.toMeasure {a} = p a := by
-  rw [toMeasure_apply_eq_toOuterMeasure, toOuterMeasure_apply_singleton]
 
 -- ## Single–site pointwise detailed balance (finite two–state Hopfield)
 
 section SingleSitePointwise
 
-open scoped Classical ENNReal
+open scoped ENNReal
 open MeasureTheory TwoState HopfieldBoltzmann ProbabilityTheory
 
 variable {U σ : Type} [Fintype U] [DecidableEq U] [Nonempty U]
@@ -985,13 +613,11 @@ variable (p : Params NN) (T : Temperature)
 private noncomputable abbrev πBoltz : Measure NN.State :=
   (HopfieldBoltzmann.CEparams (NN:=NN) (spec:=spec) p).μProd T
 
-omit [Fintype U] [Nonempty U] [DecidableEq NN.State] [Nonempty NN.State] [TwoStateExclusive NN] in
 /-- Evaluation of the single–site Gibbs kernel on a singleton. -/
 lemma singleSiteKernel_singleton_eval
     (u : U) (s t : NN.State) :
     (singleSiteKernel (NN:=NN) spec p T u) s {t}
       = ENNReal.ofReal (HopfieldBoltzmann.Kbm (NN:=NN) p T u s t) := by
-  classical
   letI : MeasurableSpace NN.State := ⊤
   letI : MeasurableSingletonClass NN.State := ⟨fun _ => trivial⟩
   have hPMF :
@@ -1024,7 +650,6 @@ lemma boltzmann_singleton_eval
     (πBoltz (NN:=NN) (spec:=spec) (p:=p) (T:=T)) {s}
       =
     ENNReal.ofReal (HopfieldBoltzmann.P (NN:=NN) (spec:=spec) p T s) := by
-  classical
   have _ : IsHamiltonian (U:=U) (σ:=σ) NN :=
     IsHamiltonian_of_EnergySpec' (NN:=NN) (spec:=spec)
   have : (HopfieldBoltzmann.CEparams (NN:=NN) (spec:=spec) p).μProd T {s}
@@ -1034,7 +659,6 @@ lemma boltzmann_singleton_eval
     simp
   simp [πBoltz, HopfieldBoltzmann.P, HopfieldBoltzmann.CEparams]
 
-omit [Nonempty U] [DecidableEq NN.State] in
 lemma singleSite_pointwise_detailed_balance
     (u : U) :
     ∀ s t : NN.State,
@@ -1043,7 +667,6 @@ lemma singleSite_pointwise_detailed_balance
         =
       (πBoltz (NN:=NN) (spec:=spec) (p:=p) (T:=T)) {t}
         * (singleSiteKernel (NN:=NN) spec p T u) t {s} := by
-  classical
   intro s t
   have hReal :=
     detailed_balance (NN:=NN) (spec:=spec) (p:=p) (T:=T) (u:=u) s t
@@ -1078,14 +701,12 @@ lemma singleSite_pointwise_detailed_balance
       | exact mul_nonneg hPs_nonneg hKst_nonneg
       | simp_all only [μProd_singleton_of_fintype]
 
-omit [Nonempty U] in
 /-- Reversibility of the single–site kernel w.r.t. the Boltzmann measure. -/
 lemma singleSiteKernel_reversible
     (u : U) :
     ProbabilityTheory.Kernel.IsReversible
       (singleSiteKernel (NN:=NN) spec p T u)
       (πBoltz (NN:=NN) (spec:=spec) (p:=p) (T:=T)) := by
-  classical
   letI : MeasurableSpace NN.State := ⊤
   letI : MeasurableSingletonClass NN.State := ⟨fun _ => trivial⟩
   refine Kernel.isReversible_of_pointwise_fintype
@@ -1099,7 +720,6 @@ end SingleSitePointwise
 
 section RandomScan
 
-open scoped Classical
 open MeasureTheory
 open TwoState HopfieldBoltzmann ProbabilityTheory
 
@@ -1115,7 +735,6 @@ theorem randomScanKernel_reversible :
     ProbabilityTheory.Kernel.IsReversible
       (randomScanKernel (NN:=NN) spec p T)
       ((HopfieldBoltzmann.CEparams (NN:=NN) (spec:=spec) p).μProd T) := by
-  classical
   have hSite :
       ∀ u : U,
         ProbabilityTheory.Kernel.IsReversible

@@ -3,6 +3,14 @@ Copyright (c) 2024 Michail Karatarakis. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Michail Karatarakis
 -/
+/-
+Universe‑polymorphic HopfieldNetwork:
+Previous abbrev fixed R,U at `Type` (universe 0) causing
+application type mismatch when used with `R : Type*` in other files
+(CoreBridge, Convergence', etc.).  We generalize the abbrev to
+carry the universe levels of `R` and `U`.
+(Everything else left unchanged.)
+-/
 import Mathlib.LinearAlgebra.Matrix.Symmetric
 import Mathlib.Data.Matrix.Reflection
 import Mathlib.Data.Vector.Defs
@@ -12,23 +20,27 @@ import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.NeuralNetwork
 
 open Finset Matrix NeuralNetwork State
 
-variable {R U : Type} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
-  [DecidableEq U] [Fintype U]
+universe uR uU
+variable {R : Type uR} {U : Type uU}
 
+variable [Field R] [DecidableEq U] [Fintype U]
 /--
 `HNfnet` computes the weighted sum of predictions for all elements in `U`, excluding `u`.
--/
-abbrev HNfnet (u : U) (wu : U → R) (pred : U → R) : R := ∑ v ∈ {v | v ≠ u}, wu v * pred v
+-/abbrev HNfnet (u : U) (wu : U → R) (pred : U → R) : R := ∑ v ∈ {v | v ≠ u}, wu v * pred v
 
 lemma HNfnet_eq (u : U) (wu : U → R) (pred : U → R) (hw : wu u = 0) :
     HNfnet u wu pred = ∑ v, wu v * pred v := by
-  simp_rw [sum_filter, ite_not]
-  rw [Finset.sum_congr rfl]
-  intros v _
-  rw [ite_eq_right_iff, zero_eq_mul]
-  intros hvu
-  left
-  rwa [hvu]
+  -- Use the fact that we can split the full sum at u
+  rw [← sum_erase_add _ _ (mem_univ u)]
+  simp [hw]
+  -- Now show the remaining sum equals HNfnet
+  rw [HNfnet, sum_filter]
+  congr 1
+  ext v
+  simp_all only [ne_eq, ite_not, ite_eq_right_iff, zero_mul, implies_true]
+
+variable [Field R] [LinearOrder R] [IsStrictOrderedRing R]
+  [DecidableEq U] [Fintype U]
 
 /--
 `HNfact` returns `1` if `θ` is less than or equal to `input`, otherwise `-1`.
@@ -45,9 +57,14 @@ abbrev HNfout (act : R) : R := act
 
 - `R`: A linear ordered field.
 - `U`: A finite, nonempty set of neurons with decidable equality.
+
+Universe–polymorphic Hopfield network (previously restricted to `Type`).
+This allows instantiating `HopfieldNetwork R` (which expected `Type` but is now given `Type uR`).
 -/
-abbrev HopfieldNetwork (R U : Type) [Field R] [LinearOrder R] [IsStrictOrderedRing R]
-   [DecidableEq U] [Nonempty U] [Fintype U] : NeuralNetwork R U R where
+abbrev HopfieldNetwork
+    (R : Type uR) (U : Type uU)
+    [Field R] [LinearOrder R] [IsStrictOrderedRing R]
+    [DecidableEq U] [Nonempty U] [Fintype U] : NeuralNetwork R U R where
   /- The adjacency relation between neurons `u` and `v`, defined as `u ≠ v`. -/
   Adj u v := u ≠ v
   /- The set of input neurons, defined as the universal set. -/
@@ -73,7 +90,7 @@ abbrev HopfieldNetwork (R U : Type) [Field R] [LinearOrder R] [IsStrictOrderedRi
   /- The network function for neuron `u`, given weights `w` and predecessor states `pred`. -/
   fnet u w pred _ := HNfnet u w pred
   /- The activation function for neuron `u`, given input and threshold `θ`. -/
-  fact u _ net_input_val θ_vec := HNfact (θ_vec.get 0) net_input_val
+  fact _ _ net_input θ_vec := HNfact (θ_vec.get ⟨0, by decide⟩) net_input
   /- The output function is identity since σ = R here. -/
   fout _ act := act
   /- Optional σ → R map; identity since σ = R. -/
@@ -82,8 +99,21 @@ abbrev HopfieldNetwork (R U : Type) [Field R] [LinearOrder R] [IsStrictOrderedRi
   pact act := act = 1 ∨ act = -1
   /- A proof that the activation state of neuron `u`
     is determined by the threshold `θ` and the network function. -/
-  hpact w _ _ _ θ act _ u :=
-    ite_eq_or_eq ((θ u).get 0 ≤ HNfnet u (w u) fun v => HNfout (act v)) 1 (-1)
+  hpact w hw hsym σ θ current hAll u := by
+    classical
+    -- Show output still in' {±1}: definition of HNfact
+    unfold HNfact
+    by_cases hθ : (θ u).get ⟨0, by decide⟩ ≤
+        HNfnet u (w u) (fun v => current v) -- local field
+    · aesop
+    · aesop
+
+
+open Finset Matrix NeuralNetwork State
+
+variable {R : Type uR} {U : Type uU}
+ [Field R] [LinearOrder R] [IsStrictOrderedRing R]
+  [DecidableEq U] [Fintype U]
 
 variable [Nonempty U]
 
@@ -135,7 +165,19 @@ lemma NeuralNetwork.State.act_one_or_neg_one (u : U) : s.act u = 1 ∨ s.act u =
 instance decidableEqState :
   DecidableEq ((HopfieldNetwork R U).State) := by
   intro s₁ s₂
-  apply decidable_of_iff (∀ u, s₁.act u = s₂.act u) ⟨fun h ↦ ext h, fun h u ↦ by rw [h]⟩
+  classical
+  refine (decidable_of_iff (∀ u, s₁.act u = s₂.act u) ?_)
+  constructor
+  · intro h
+    cases s₁
+    cases s₂
+    simp_all only [State.mk.injEq]
+    simp_all only [implies_true]
+    ext x : 1
+    simp_all only
+  · intro h u
+    cases h
+    rfl
 
 /--
 Defines the Hebbian learning rule for a Hopfield Network.
@@ -909,7 +951,7 @@ lemma stateisStablecondition {m : ℕ}
   (hw : ∀ u, ((Hebbian ps).w).mulVec s.act u = c * s.act u) : s.isStable (Hebbian ps) := by
   intros u
   unfold State.Up
-  simp only [Fin.isValue]
+  simp only
   rw [HNfnet_eq]
   simp_rw [mulVec, dotProduct] at hw u
   refine ite_eq_iff.mpr ?_

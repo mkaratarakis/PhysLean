@@ -1,4 +1,4 @@
-import PhysLean.StatisticalMechanics.CanonicalEnsemble.TwoState
+import PhysLean.StatisticalMechanics.CanonicalEnsemble.Finite
 import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.TwoState
 
 open MeasureTheory
@@ -10,17 +10,17 @@ This file defines the `IsHamiltonian` typeclass, which provides the formal bridg
 between the constructive, algorithmic definition of a `NeuralNetwork` (Layer 4)
 and the physical, probabilistic framework of a `CanonicalEnsemble` (Layer 2).
 -/
-variable {U σ : Type} [Fintype U] [DecidableEq U]
 
 /-- For any finite-state neural network we use the trivial (⊤) measurable space. -/
 instance (NN : NeuralNetwork ℝ U σ) [Fintype NN.State] : MeasurableSpace NN.State := ⊤
 
-omit [Fintype U] [DecidableEq U] in
 @[simp] lemma measurable_of_fintype_state
     (NN : NeuralNetwork ℝ U σ) [Fintype NN.State] (f : NN.State → ℝ) :
     Measurable f := by
   classical
   unfold Measurable; intro s _; simp
+
+variable {U σ : Type} [DecidableEq U]
 
 /--
 A typeclass asserting that a `NeuralNetwork`'s dynamics are governed by an energy function.
@@ -54,13 +54,13 @@ noncomputable def toCanonicalEnsemble
     CanonicalEnsemble NN.State where
   energy := IsHamiltonian.energy p
   dof := 0 -- For discrete spin systems, there are no continuous degrees of freedom.
-  phase_space_unit := 1 -- For counting measures, the unit is 1.
+  phaseSpaceunit := 1 -- For counting measures, the unit is 1.
   energy_measurable := IsHamiltonian.energy_measurable p
   μ := Measure.count -- The natural base measure for a discrete state space.
   μ_sigmaFinite := by infer_instance
 
-variable {U σ : Type} [Fintype U] [DecidableEq U]
-variable {NN : NeuralNetwork ℝ U σ} [TwoStateNeuralNetwork NN]
+--variable {U σ : Type} -- [DecidableEq U] --[Fintype U]
+--variable {NN : NeuralNetwork ℝ U σ} [TwoStateNeuralNetwork NN]
 
 /-
 This instance is the formal bridge. It is a theorem stating that any `NeuralNetwork`
@@ -70,7 +70,7 @@ Lean's typeclass system will use this instance automatically. If you define an `
 for a network, Lean will now know that it is also `IsHamiltonian`.
 -/
 
-/-! ## Generic Hamiltonian bridge (refactored)
+/-! ## Generic Hamiltonian bridge
 
 We generalize the previous `IsHamiltonian_of_EnergySpecSymmetricBinary` to any
 two–state neural network for which the activation predicate `pact` is *exactly*
@@ -187,10 +187,10 @@ lemma hopfieldCE_dof
 
 omit [Fintype U] in
 @[simp]
-lemma hopfieldCE_phase_space_unit
+lemma hopfieldCE_phaseSpaceunit
     (NN : NeuralNetwork ℝ U σ) [Fintype NN.State] [IsHamiltonian (U:=U) (σ:=σ) NN]
     (p : Params NN) :
-    (hopfieldCE (U:=U) (σ:=σ) NN p).phase_space_unit = 1 := rfl
+    (hopfieldCE (U:=U) (σ:=σ) NN p).phaseSpaceunit = 1 := rfl
 
 omit [Fintype U] in
 /-- Uniform probability for a constant-energy Hamiltonian (sanity test of the bridge). -/
@@ -221,13 +221,13 @@ lemma hopfieldCE_probability_const_energy
         ((Fintype.card NN.State : ℕ) • Real.exp (-(T.β : ℝ) * c))
           = (Fintype.card NN.State : ℝ) * Real.exp (-(T.β : ℝ) * c) := by
       simp
-    simp [hZ, hsum, hsumConst, hnsmul]
+    simp [hZ]
     aesop
   unfold CanonicalEnsemble.probability
   have hexp_ne : Real.exp (-(T.β : ℝ) * c) ≠ 0 := (Real.exp_pos _).ne'
   simp_rw [𝓒, toCanonicalEnsemble, hE]
   erw [hZconst]
-  simp [one_div, div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc, hexp_ne]
+  simp [div_eq_mul_inv, mul_comm, mul_left_comm]
 
 omit [Fintype U] in
 /-- Corollary: mean energy = constant `c` under the induced canonical ensemble,
@@ -252,8 +252,8 @@ lemma hopfieldCE_meanEnergy_const
           (∑ _ : NN.State, Real.exp (-(T.β : ℝ) * c))
             = (Fintype.card NN.State : ℕ) • Real.exp (-(T.β : ℝ) * c) := by
         simp [Finset.sum_const, Finset.card_univ]
-      simp [𝓒, toCanonicalEnsemble, hE, hconst, nsmul_eq_mul,
-            mul_comm, mul_left_comm, mul_assoc]
+      simp [𝓒, toCanonicalEnsemble, hE, nsmul_eq_mul,
+            mul_comm]
     simpa [hZform]
   have hNum' :
       (∑ s : NN.State,
@@ -273,8 +273,7 @@ lemma hopfieldCE_meanEnergy_const
               c * Real.exp (-(T.β : ℝ) * c))
             = (Fintype.card NN.State : ℕ) • (c * Real.exp (-(T.β : ℝ) * c)) := by
         simp [Finset.sum_const, Finset.card_univ]
-      simp [𝓒, toCanonicalEnsemble, hE, hconst, nsmul_eq_mul,
-            mul_comm, mul_left_comm, mul_assoc]
+      simp [hE, nsmul_eq_mul, mul_comm, mul_left_comm]
     simpa [hZeq, mul_comm, mul_left_comm, mul_assoc] using hNumEq
   unfold CanonicalEnsemble.meanEnergy
   have hZne : 𝓒.mathematicalPartitionFunction T ≠ 0 := by
@@ -317,7 +316,7 @@ variable (s : NN.State)
 #check (thermodynamicEntropy_eq_shannonEntropy
           (𝓒:=hopfieldCE (U:=U) (σ:=σ) NN p) (T:=T))
 
--- Additivity for two independent Hopfield ensembles (same phase_space_unit = 1)
+-- Additivity for two independent Hopfield ensembles (same phaseSpaceunit = 1)
 variable (NN₁ NN₂ : NeuralNetwork ℝ U σ)
 variable [Fintype NN₁.State] [Nonempty NN₁.State] [IsHamiltonian (U:=U) (σ:=σ) NN₁]
 variable [Fintype NN₂.State] [Nonempty NN₂.State] [IsHamiltonian (U:=U) (σ:=σ) NN₂]
