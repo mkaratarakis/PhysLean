@@ -17,7 +17,6 @@ instance (NN : NeuralNetwork ℝ U σ) [Fintype NN.State] : MeasurableSpace NN.S
 @[simp] lemma measurable_of_fintype_state
     (NN : NeuralNetwork ℝ U σ) [Fintype NN.State] (f : NN.State → ℝ) :
     Measurable f := by
-  classical
   unfold Measurable; intro s _; simp
 
 variable {U σ : Type} [DecidableEq U]
@@ -97,7 +96,7 @@ instance (U) [Fintype U] [DecidableEq U] [Nonempty U] :
   pact_iff a := by
     -- pact definition: a = 1 ∨ a = -1
     simp [TwoState.SymmetricBinary]
-    aesop
+    rfl
 
 /-- Instance: `ZeroOne` activations are exactly `{0,1}`. -/
 instance zeroOneExclusive (U) [Fintype U] [DecidableEq U] [Nonempty U] :
@@ -105,7 +104,27 @@ instance zeroOneExclusive (U) [Fintype U] [DecidableEq U] [Nonempty U] :
   pact_iff a := by
     -- pact definition: a = 0 ∨ a = 1
     simp [TwoState.ZeroOne, TwoState.SymmetricBinary]
-    aesop
+    apply Iff.intro
+    · intro a_1
+      cases a_1 with
+      | inl h =>
+        subst h
+        apply Or.inr
+        rfl
+      | inr h_1 =>
+        subst h_1
+        apply Or.inl
+        rfl
+    · intro a_1
+      cases a_1 with
+      | inl h =>
+        subst h
+        apply Or.inr
+        rfl
+      | inr h_1 =>
+        subst h_1
+        apply Or.inl
+        rfl
 
 /-- Instance: `SymmetricSignum` activations (two-point type) are exactly the two constructors. -/
 instance signumExclusive (U) [Fintype U] [DecidableEq U] [Nonempty U] :
@@ -160,7 +179,7 @@ noncomputable def IsHamiltonian_of_EnergySpecSymmetricBinary
 open CanonicalEnsemble
 open scoped BigOperators
 
-variable {U : Type} [Fintype U] [DecidableEq U]
+variable {U : Type} [DecidableEq U]
 
 /-- Abbreviation: the canonical ensemble associated to a Hamiltonian neural network. -/
 noncomputable abbrev hopfieldCE
@@ -178,21 +197,18 @@ instance
   dof_eq_zero := rfl
   phase_space_unit_eq_one := rfl
 
-omit [Fintype U] in
 @[simp]
 lemma hopfieldCE_dof
     (NN : NeuralNetwork ℝ U σ) [Fintype NN.State] [IsHamiltonian (U:=U) (σ:=σ) NN]
     (p : Params NN) :
     (hopfieldCE (U:=U) (σ:=σ) NN p).dof = 0 := rfl
 
-omit [Fintype U] in
 @[simp]
 lemma hopfieldCE_phaseSpaceunit
     (NN : NeuralNetwork ℝ U σ) [Fintype NN.State] [IsHamiltonian (U:=U) (σ:=σ) NN]
     (p : Params NN) :
     (hopfieldCE (U:=U) (σ:=σ) NN p).phaseSpaceunit = 1 := rfl
 
-omit [Fintype U] in
 /-- Uniform probability for a constant-energy Hamiltonian (sanity test of the bridge). -/
 lemma hopfieldCE_probability_const_energy
     (NN : NeuralNetwork ℝ U σ) [Fintype NN.State] [IsHamiltonian (U:=U) (σ:=σ) NN]
@@ -201,7 +217,6 @@ lemma hopfieldCE_probability_const_energy
     (T : Temperature) (s : NN.State) :
     (hopfieldCE (U:=U) (σ:=σ) NN p).probability T s
       = (1 : ℝ) / (Fintype.card NN.State) := by
-  classical
   set 𝓒 := hopfieldCE (U:=U) (σ:=σ) NN p
   have hZ :=
     (mathematicalPartitionFunction_of_fintype (𝓒:=𝓒) T)
@@ -222,14 +237,13 @@ lemma hopfieldCE_probability_const_energy
           = (Fintype.card NN.State : ℝ) * Real.exp (-(T.β : ℝ) * c) := by
       simp
     simp [hZ]
-    aesop
+    simp_all only [toCanonicalEnsemble_energy, neg_mul, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, 𝓒]
   unfold CanonicalEnsemble.probability
   have hexp_ne : Real.exp (-(T.β : ℝ) * c) ≠ 0 := (Real.exp_pos _).ne'
   simp_rw [𝓒, toCanonicalEnsemble, hE]
   erw [hZconst]
   simp [div_eq_mul_inv, mul_comm, mul_left_comm]
 
-omit [Fintype U] in
 /-- Corollary: mean energy = constant `c` under the induced canonical ensemble,
     for a constant-energy network. -/
 lemma hopfieldCE_meanEnergy_const
