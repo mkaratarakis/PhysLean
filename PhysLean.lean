@@ -346,7 +346,6 @@ import PhysLean.Units.Momentum.Basic
 import PhysLean.Units.Pressure
 import PhysLean.Units.Speed
 import PhysLean.Units.Velocity
-import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.Asym
 import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.aux
 import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.BoltzmannMachine
 import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.BoltzmannMachine.Core
@@ -363,3 +362,4 @@ import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.test
 import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.toCanonicalEnsemble
 import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.TSAux
 import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.TwoState
+import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.ZeroTemp
