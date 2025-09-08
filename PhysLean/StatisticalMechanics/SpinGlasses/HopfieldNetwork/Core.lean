@@ -4,10 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Michail Karatarakis
 -/
 /-
-Universe‑polymorphic HopfieldNetwork:
-Previous abbrev fixed R,U at `Type` (universe 0) causing
-application type mismatch when used with `R : Type*` in other files
-(CoreBridge, Convergence', etc.).  We generalize the abbrev to
+Universe‑polymorphic HopfieldNetwork: We generalize the abbrev to
 carry the universe levels of `R` and `U`.
 (Everything else left unchanged.)
 -/

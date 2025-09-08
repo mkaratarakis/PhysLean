@@ -11,6 +11,9 @@ import PhysLean.Meta.Linters.Sorry
 import Mathlib.Analysis.SpecialFunctions.Log.Summable
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Order.Filter.AtTopBot.Basic
+
+set_option linter.unusedSimpArgs false
+
 /-!
 # Canonical Ensemble: Core Definitions
 
