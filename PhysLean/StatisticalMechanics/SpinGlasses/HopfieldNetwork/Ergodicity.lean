@@ -66,7 +66,7 @@ proving the irreducibility of `RScol` (as a non–negative matrix).
 
 ## Methodological Notes
 
-1. We deliberately separate:
+1. We separate:
    - Local algebraic / probabilistic identities (logistic update probabilities).
    - Set–theoretic combinatorics on spin configurations.
    - Matrix / quiver path reasoning abstracted in the `PerronFrobenius` namespace.
@@ -110,14 +110,8 @@ Future directions facilitated by this layout:
 * `β = T.β`: inverse temperature.
 * Set difference tracking via `diffSites`.
 
-## Summary
-
-This file closes the ergodicity loop:
-local Gibbs updates → global Markov kernel → non–negative matrix →
-Perron–Frobenius → uniqueness + irreducibility → ergodicity theorem.
-
 -/
-section ErgodicityPF
+section Ergodicity
 
 set_option linter.unusedVariables false
 set_option linter.unusedSectionVars false
@@ -498,7 +492,8 @@ lemma diffSites_card_zero
   by_contra hneq
   have : u ∈ diffSites (NN:=NN) s s' := by
     simp [diffSites, hneq]
-  aesop
+  simp_all only [Finset.card_eq_zero, ne_eq, Finset.mem_filter, Finset.mem_univ, not_false_eq_true, and_self,
+    imp_false, not_true_eq_false]
 
 /-- One-step “towards-target” flip: picking a differing site reduces the number of differences.
 Given a site `u` where `s` and `s'` differ, build a state `s₁` that differs from `s` only at `u`
@@ -790,4 +785,4 @@ theorem randomScan_ergodic_and_uniqueInvariant :
   · exact RScol_irreducible (NN:=NN) (spec:=spec) (p:=p) (T:=T)
   · exact RScol_unique_stationary_simplex (NN:=NN) (spec:=spec) (p:=p) (T:=T)
 
-end ErgodicityPF
+end Ergodicity
