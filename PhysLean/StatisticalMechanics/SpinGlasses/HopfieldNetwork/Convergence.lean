@@ -11,7 +11,7 @@ import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.aux
 # Convergence of Strictly Hamiltonian Neural Networks
 This file defines the `IsStrictlyHamiltonian` typeclass abstraction for a physical system whose dynamics are guaranteed to converge to a
 fixed point. It formalizes the concept of a Lyapunov function with a tie-breaking
-auxiliary potential.
+auxiliary potential, generalizing the proof given in the file Core.lean and executable in test.lean.
 -/
 variable {R U σ : Type*} [Field R] [LinearOrder R] [DecidableEq U] --[Fintype U] [DecidableEq U]
 

@@ -216,6 +216,13 @@ theorem maximizer_is_eigenvector  (hA_prim : IsPrimitive A)
     · rfl
   linarith [r_ge_r_y_norm, r_y_norm_eq_r_y, r_lt_r_y]
 
+/-- Short alias for `maximizer_is_eigenvector`. -/
+theorem max_is_eig (hA_prim : IsPrimitive A)
+    (hA_nonneg : ∀ i j, 0 ≤ A i j) {v : n → ℝ} (hv_max : IsMaxOn (collatzWielandtFn A) (stdSimplex ℝ n) v)
+    (hv_simplex : v ∈ stdSimplex ℝ n) (r : ℝ) (hr_def : r = collatzWielandtFn A v) :
+    A *ᵥ v = r • v := by
+  exact maximizer_is_eigenvector hA_prim hA_nonneg hv_max hv_simplex r hr_def
+
 /-- An eigenvector `v` of a primitive matrix `A` corresponding to a positive eigenvalue `r` must be strictly positive. -/
 lemma eigenvector_of_primitive_is_positive {r : ℝ} (hA_prim : IsPrimitive A) (hr_pos : 0 < r)
     {v : n → ℝ} (h_eigen : A *ᵥ v = r • v) (hv_nonneg : ∀ i, 0 ≤ v i) (hv_ne_zero : v ≠ 0) :

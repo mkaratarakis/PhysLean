@@ -12,7 +12,7 @@ variable {n : Type*} [Fintype n]
 section PerronFrobenius
 variable {n : Type*} [Fintype n] [Nonempty n]
 variable {A : Matrix n n ℝ}
-open LinearMap Set Filter Topology Finset
+open LinearMap Set Filter Topology Finset IsCompact
 open scoped Convex Pointwise
 
 /-- The Collatz-Wielandt function, `r(x)` in Seneta's notation.
@@ -150,7 +150,7 @@ theorem exists_maximizer (A : Matrix n n ℝ) :
   have h_nonempty : (stdSimplex ℝ n).Nonempty := stdSimplex_nonempty
   have h_usc : UpperSemicontinuousOn (collatzWielandtFn A) (stdSimplex ℝ n) :=
     upperSemicontinuousOn A
-  exact IsCompact.exists_isMaxOn_of_upperSemicontinuousOn h_compact h_nonempty h_usc
+  exact exists_max_on_usco h_compact h_nonempty h_usc
 
 lemma eq_iInf_of_nonempty
   {n : Type*} [Fintype n] [Nonempty n] (A : Matrix n n ℝ)
@@ -333,7 +333,7 @@ noncomputable def perronRoot (A : Matrix n n ℝ) : ℝ :=
 noncomputable def perronRoot' (A : Matrix n n ℝ) : ℝ :=
   ⨅ (x : n → ℝ) (_ : ∀ i, 0 < x i), maxRatio A x
 
-/-- An alternative definition of the Perron root, as the supremum of the Collatz-Wielandt function. -/
+/-- The Perron root, as the supremum of the Collatz-Wielandt function (see Seneta). -/
 noncomputable def perronRoot_alt (A : Matrix n n ℝ) : ℝ :=
   sSup (collatzWielandtFn A '' P_set)
 

@@ -13,7 +13,7 @@ variable {f : α → ℝ} {K : Set α}
 section GeneralProof
 -- This section provides proofs that do not rely on first-countability.
 
-lemma upperSemicontinuousOn_iff_upperSemicontinuous {s : Set α}  :
+lemma usco_on_iff_usco {s : Set α}  :
     UpperSemicontinuousOn f s ↔ UpperSemicontinuous (s.restrict f) := by
   constructor
   · intro h x c hc
@@ -33,7 +33,7 @@ is bounded above.
 This proof uses the open cover definition of compactness and does not require the space
 to be first-countable.
 -/
-theorem bddAbove_image_of_upperSemicontinuousOn (hK : IsCompact K)
+theorem bdd_above_image_usco_on (hK : IsCompact K)
     (hf : UpperSemicontinuousOn f K) : BddAbove (f '' K) := by
   -- We proceed by contradiction. Assume the image `f '' K` is not bounded above.
   by_contra h_unbdd
@@ -46,7 +46,7 @@ theorem bddAbove_image_of_upperSemicontinuousOn (hK : IsCompact K)
   have hU_open : ∀ n, IsOpen (U n) := by
     intro n
     have hf_restrict : UpperSemicontinuous (K.restrict f) :=
-      (upperSemicontinuousOn_iff_upperSemicontinuous).mp hf
+      (usco_on_iff_usco).mp hf
     rw [upperSemicontinuous_iff_isOpen_preimage] at hf_restrict
     convert hf_restrict n
   -- If `f` is unbounded on `K`, then the collection `{U n}` covers `K` (i.e., `univ` in `Set K`).
@@ -92,7 +92,7 @@ theorem bddAbove_image_of_upperSemicontinuousOn (hK : IsCompact K)
     exact (h_all_lt ⟨x, hx_K⟩).le
   exact h_unbdd h_bdd_final
 
-lemma tendsto_const_sub_inv_add_one_atTop (c : ℝ) :
+lemma tendsto_sub_inv_atTop (c : ℝ) :
     Tendsto (fun n : ℕ => c - 1 / (n + 1)) atTop (𝓝 c) := by
   have h_inv : Tendsto (fun n : ℕ => 1 / ((n : ℝ) + 1)) atTop (𝓝 0) := by
     have h_denom : Tendsto (fun n => (n : ℝ) + 1) atTop atTop :=
@@ -104,10 +104,10 @@ lemma tendsto_const_sub_inv_add_one_atTop (c : ℝ) :
 **Extreme Value Theorem (General Version)**: An upper semicontinuous function on a non-empty
 compact set attains its supremum.
 -/
-theorem exists_isMaxOn_of_upperSemicontinuousOn (hK : IsCompact K) (hK_nonempty : K.Nonempty)
+theorem exists_max_on_usco (hK : IsCompact K) (hK_nonempty : K.Nonempty)
     (hf : UpperSemicontinuousOn f K) : ∃ x₀ ∈ K, IsMaxOn f K x₀ := by
   -- The function is bounded above on K.
-  have h_bdd_above : BddAbove (f '' K) := bddAbove_image_of_upperSemicontinuousOn hK hf
+  have h_bdd_above : BddAbove (f '' K) := bdd_above_image_usco_on hK hf
   let s := sSup (f '' K)
   -- We work in the compact space `K`.
   haveI : CompactSpace K := isCompact_iff_compactSpace.mp hK
@@ -117,7 +117,7 @@ theorem exists_isMaxOn_of_upperSemicontinuousOn (hK : IsCompact K) (hK_nonempty 
   have hC_closed : ∀ n, IsClosed (C n) := by
     intro n
     have hf_restrict : UpperSemicontinuous (K.restrict f) :=
-      (upperSemicontinuousOn_iff_upperSemicontinuous).mp hf
+      (usco_on_iff_usco).mp hf
     have : C n = K.restrict f ⁻¹' (Ici (s - 1 / (↑n + 1))) := by
       ext x; simp_all only [one_div, tsub_le_iff_right, mem_setOf_eq, mem_preimage, restrict_apply, mem_Ici, C, s]
     rw [this]
@@ -170,7 +170,7 @@ theorem exists_isMaxOn_of_upperSemicontinuousOn (hK : IsCompact K) (hK_nonempty 
     simp only [mem_iInter] at hx₀_inter
     have h_le : f x₀ ≤ s := le_csSup h_bdd_above (mem_image_of_mem f x₀.prop)
     have h_ge : s ≤ f x₀ :=
-      le_of_tendsto (tendsto_const_sub_inv_add_one_atTop s) (Filter.Eventually.of_forall (fun n => hx₀_inter n))
+      le_of_tendsto (tendsto_sub_inv_atTop s) (Filter.Eventually.of_forall (fun n => hx₀_inter n))
     exact le_antisymm h_le h_ge
   -- This implies `IsMaxOn`.
   intro y hy

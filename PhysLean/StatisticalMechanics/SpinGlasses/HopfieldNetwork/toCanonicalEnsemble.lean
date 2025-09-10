@@ -1,6 +1,9 @@
 import PhysLean.StatisticalMechanics.CanonicalEnsemble.Finite
 import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.TwoState
 
+set_option linter.unusedSectionVars false
+set_option linter.unusedSimpArgs false
+
 open MeasureTheory
 
 /-!
@@ -43,7 +46,7 @@ class IsHamiltonian (NN : NeuralNetwork ℝ U σ) [MeasurableSpace NN.State] whe
 A formal constructor that lifts any `NeuralNetwork` proven to be `IsHamiltonian`
 into the `CanonicalEnsemble` framework.
 
-This function is the bridge that allows us to apply the full power of statistical
+This function allows us to apply statistical
 mechanics (free energy, entropy, etc.) to a structurally-defined neural network.
 -/
 @[simps!]
@@ -58,15 +61,11 @@ noncomputable def toCanonicalEnsemble
   μ := Measure.count -- The natural base measure for a discrete state space.
   μ_sigmaFinite := by infer_instance
 
---variable {U σ : Type} -- [DecidableEq U] --[Fintype U]
---variable {NN : NeuralNetwork ℝ U σ} [TwoStateNeuralNetwork NN]
-
 /-
 This instance is a theorem stating that any `NeuralNetwork`
 for which we can provide an `EnergySpec` is guaranteed to be an `IsHamiltonian` system.
 
-Lean's typeclass system will use this instance automatically. If we define an `EnergySpec`
-for a network, Lean will now know that it is also `IsHamiltonian`.
+If we define an `EnergySpec` for a network, Lean's typeclass system will now know that it is also `IsHamiltonian`.
 -/
 
 /-! ## Generic Hamiltonian bridge

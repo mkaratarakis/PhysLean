@@ -1,6 +1,7 @@
 import PhysLean.StatisticalMechanics.SpinGlasses.HopfieldNetwork.BoltzmannMachine
 
 set_option linter.unusedSectionVars false
+set_option linter.unusedSimpArgs false
 
 -- We provide a finite canonical ensemble instance for the Hopfield Boltzmann construction.
 instance
@@ -13,7 +14,6 @@ instance
   dsimp [HopfieldBoltzmann.CEparams]
   infer_instance
 
---variable [Fintype ι] [DecidableEq ι] [Ring R]
 open CanonicalEnsemble Constants
 
 section DetailedBalance
@@ -431,7 +431,6 @@ theorem detailed_balance
 
 end DetailedBalance
 
---variable [Fintype ι] [DecidableEq ι] [Ring R]
 open CanonicalEnsemble Constants
 
 section DetailedBalance
@@ -473,11 +472,6 @@ noncomputable def randomScanKernel
       TwoState.gibbsUpdate (NN:=NN) (RingHom.id ℝ) p T s u))
 
 open MeasureTheory
-
---variable {U σ : Type} [Fintype U] [DecidableEq U] [Nonempty U]
---variable {NN : NeuralNetwork ℝ U σ} [TwoStateNeuralNetwork NN] [TwoStateExclusive NN]
---variable {spec : TwoState.EnergySpec' (NN:=NN)}
---variable {p : Params NN} {T : Temperature}
 
 /-- Uniform random-scan kernel evaluation:
 the kernel probability of a measurable set `B` equals the arithmetic
@@ -562,7 +556,9 @@ lemma lintegral_randomScanKernel_as_sum_div
 / (Fintype.card U : ℝ≥0∞)
         = c * ∑ u : U, ∫⁻ x in A, (κu u) x B ∂π := by
     rw [ENNReal.div_eq_inv_mul]
-  aesop
+  rename_i this_1
+  simp_all only [MeasurableSpace.measurableSet_top, ne_eq, Nat.cast_eq_zero, Fintype.card_ne_zero, not_false_eq_true,
+    c, this_1, κ, κu]
 
 /-- Uniform average of reversible single–site kernels is reversible. -/
 lemma randomScanKernel_reversible_of_sites
@@ -593,7 +589,6 @@ lemma randomScanKernel_reversible_of_sites
   have hBexpr :=
     lintegral_randomScanKernel_as_sum_div (NN:=NN) (spec:=spec) p T π B A hB hA
   simp [hAexpr, hBexpr, hSum]
-
 
 -- ## Single–site pointwise detailed balance (finite two–state Hopfield)
 
@@ -643,7 +638,6 @@ lemma singleSiteKernel_singleton_eval
           simp [ENNReal.ofReal_toReal, hfin]
     _ = ENNReal.ofReal (HopfieldBoltzmann.Kbm (NN:=NN) p T u s t) := rfl
 
-omit [Nonempty U] [DecidableEq NN.State] in
 /-- Evaluation of the Boltzmann measure on a singleton as `ofReal` of the Boltzmann probability. -/
 lemma boltzmann_singleton_eval
     (s : NN.State) :

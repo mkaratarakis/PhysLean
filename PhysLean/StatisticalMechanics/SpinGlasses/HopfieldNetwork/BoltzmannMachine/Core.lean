@@ -48,6 +48,54 @@ Boltzmann Machines have binary neurons (±1) with probability of activation dete
 - Local field for neuron $u$: $L_u(s) = \sum_{v \neq u} w_{u,v}s_v + \theta_u$
 - Probability of neuron $u$ being 1: $P(s_u = 1) = \frac{1}{1 + \exp(-2L_u(s)/T)}$
 
+Key derived properties for Boltzmann Machine (BM) = SymmetricBinary:
+
+Structural
+- abbrev BoltzmannMachine R U = TwoState.SymmetricBinary R U
+- StateBM ≃ functions U → {+1, -1} (finite; Fintype instance via BinarySetReal)
+- ParamsBM wraps core Params + temperature T > 0
+
+Energy / Local Field
+- HopfieldEnergy.hamiltonian p s = −(1/2) * sᵀ W s + θ · s
+- symmetricBinaryEnergySpec : EnergySpec' (gives E, localField, flip relation)
+- localField_spec: spec.localField p s u = s.net p u − θ_u
+- hamiltonian_flip_relation: E(s⁺) − E(s⁻) = −2 * (net − θ)
+
+Lyapunov / Convergence
+- Instance IsStrictlyHamiltonian_of_TwoState_EnergySpec:
+  * energy_is_lyapunov: E after single-site update ≤ before
+  * aux_strictly_decreases_on_tie: tie broken by magnetization rank
+- convergence_of_hamiltonian: fair async updates reach stable state (∃N stable)
+
+Probabilistic Dynamics
+- probPos logistic form; 0 < probPos < 1; symmetry logisticProb(-x) = 1 - logisticProb x
+- gibbsUpdate / randomScanKernel defined; random-scan mixture over sites
+- Zero-temperature limit: gibbs_update_tends_to_zero_temp_limit (pointwise PMF convergence)
+- Explicit limiting kernel zeroTempLimitPMF (deterministic except ties → 1/2 split)
+
+Detailed Balance & Boltzmann Distribution
+- CEparams builds CanonicalEnsemble from EnergySpec'
+- P p T s = Boltzmann weight / Z
+- boltzmann_ratio: P(s') / P(s) = exp(−β(E(s')−E(s)))
+- randomScanKernel_reversible: reversibility (detailed balance) w.r.t. Boltzmann measure
+
+Stochastic Matrix (Random-Scan)
+- RScol: column-stochastic matrix of random-scan Gibbs kernel
+  * RScol_nonneg: entries ≥ 0
+  * RScol_colsum_one: column sums = 1
+  * RScol_diag_pos: aperiodicity (positive self-loop)
+  * DiffOnly / diffSites API for Hamming distance
+  * exists_single_flip_reduce: single-site flip reduces distance
+  * RScol_exists_positive_power: communication (∃ n, (RScol^n) s' s > 0)
+  * RScol_irred: irreducible (Perron–Frobenius strong connectivity)
+  * exists_positive_eigenvector_of_irreducible_stochastic: unique stationary vector in simplex
+  * randomScan_ergodicUniqueInvariant: reversibility ∧ positive diagonal ∧ irreducible ∧ unique stationary
+
+Zero-Temperature Asymptotics
+- tendsto_probPos_at_zero / scaled logistic lemmas: classification (→1 / →0 / →1/2)
+- Full pointwise convergence for every state (gibbs_update_tends_to_zero_temp_limit)
+
+Summary: BM inherits a certified Lyapunov structure, convergence of asynchronous dynamics, detailed balance, zero-temperature limit behavior, and Perron–Frobenius spectral uniqueness of the stationary distribution for the random-scan Gibbs sampler.
 
 -/
 

@@ -73,7 +73,7 @@ limit as `β → ∞` (equivalently, `T → 0+`).
     - `instTwoStateSignum` for `SymmetricSignum`,
     - `instTwoStateZeroOne` for `ZeroOne`.
 
-- Scaling gadgets:
+- Scaling tools:
   * `scale f : ℝ`, `scaleS f : S`:
     gap between the numeric images of `σ_pos` and `σ_neg`.
     Specializations:
@@ -153,18 +153,10 @@ limit as `β → ∞` (equivalently, `T → 0+`).
 - The zero-temperature limit theorem applies once you supply an `f` that is both
   a ring hom and an injective order embedding (via the corresponding typeclasses).
 
-## TODO
-
-- Finish the (commented) section proving reversibility and invariance of the
-  random-scan Gibbs kernel w.r.t. the Boltzmann distribution, after adding a
-  finite enumeration of states and the necessary summation lemmas.
-- Provide convenience embeddings `f : R →+* ℝ` for common `R` (e.g. `R = ℝ`).
-
 -/
 
 open Finset Matrix NeuralNetwork State Constants Temperature Filter Topology
 open scoped ENNReal NNReal BigOperators
-open NeuralNetwork
 
 --variable {R U σ : Type}
 --variable {R U σ : Type*}
@@ -233,7 +225,6 @@ class TwoStateNeuralNetwork {R U σ}
 namespace TwoState
 variable {R U σ : Type}
 variable [Field R] [LinearOrder R] [IsStrictOrderedRing R]
---variable [DecidableEq U] [Fintype U] [Nonempty U]
 
 /-! Concrete network families (three encodings). -/
 

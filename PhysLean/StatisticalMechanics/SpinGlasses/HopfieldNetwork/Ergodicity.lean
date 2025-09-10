@@ -160,7 +160,6 @@ lemma RScol_colsum_one :
     simp [randomScanKernel, pmfToKernel, Kernel.ofFunOfCountable, hq]
   have h1 :
     (∑ s, (κ t {s})) = (κ t Set.univ) := by
-    classical
     -- Use q.toMeasure on both sides
     have h_singleton : ∀ s : NN.State, q.toMeasure {s} = q s := by
       intro s
@@ -198,7 +197,6 @@ lemma RScol_colsum_one :
   have hsum_toReal :
     (∑ s, (κ t {s}).toReal)
       = ((∑ s, (κ t {s}))).toReal := by
-    classical
     have h :=
       ENNReal.toReal_sum
         (s := (Finset.univ : Finset NN.State))
@@ -217,7 +215,6 @@ lemma RScol_colsum_one :
 lemma RScol_diag_pos :
   ∀ s, 0 < RScol (NN:=NN) (spec:=spec) p T s s := by
   intro s
-  classical
   -- random-scan as uniform average of single-site kernels on {s}
   have hκ :
     κ s {s}
@@ -269,10 +266,9 @@ lemma RScol_diag_pos :
     have h_ofReal_pos : 0 < ENNReal.ofReal (HopfieldBoltzmann.Kbm (NN:=NN) p T u s s) :=
       ENNReal.ofReal_pos.mpr hstay_real
     simpa [h_eval] using h_ofReal_pos
-  -- Sum over sites is positive: pick any site u0 and bound from below by its positive contribution
+  -- Sum over sites is positive: we pick any site u0 and bound from below by its positive contribution
   have hsum_pos :
     0 < (∑ u : U, (singleSiteKernel (NN:=NN) spec p T u) s {s}) := by
-    classical
     obtain ⟨u0⟩ := ‹Nonempty U›
     have hnonneg : ∀ u : U, 0 ≤ (singleSiteKernel (NN:=NN) spec p T u) s {s} := by
       intro u; exact le_of_lt (h_u_pos u)
@@ -305,7 +301,6 @@ lemma RScol_diag_pos :
         simpa using (measure_mono hsub : (κ s {s}) ≤ (κ s Set.univ))
       -- κ s Set.univ = 1
       have h_univ : κ s Set.univ = 1 := by
-        classical
         have hunif :=
           randomScanKernel_eval_uniform (NN:=NN) (spec:=spec) (p:=p) (T:=T) s Set.univ (by trivial)
         have h_one : ∀ u : U, (singleSiteKernel (NN:=NN) spec p T u) s Set.univ = 1 := by
@@ -334,7 +329,6 @@ lemma RScol_pos_of_diffOnly
   {u : U} {s s' : NN.State}
   (h : DiffOnly (NN:=NN) u s s') :
   0 < RScol (NN:=NN) (spec:=spec) p T s s' := by
-  classical
   -- random-scan as uniform average of single-site kernels
   have hκ :
     κ s' {s}
@@ -421,7 +415,6 @@ lemma RScol_pos_of_diffOnly
         unfold TwoState.probPos; exact logisticProb_pos' _
       have hreal_pos : 0 < HopfieldBoltzmann.Kbm (NN:=NN) p T u s' s := by
         simpa [hK_eq] using hprobc
-      -- back to ENNReal
       have h_eval :=
         singleSiteKernel_singleton_eval (NN:=NN) (spec:=spec) (p:=p) (T:=T) u s' s
       have : 0 < ENNReal.ofReal (HopfieldBoltzmann.Kbm (NN:=NN) p T u s' s) :=
@@ -508,7 +501,6 @@ lemma exists_single_flip_reduce
     ∃ s₁ : NN.State,
       DiffOnly (NN:=NN) u s₁ s ∧
       (diffSites (NN:=NN) s₁ s').card + 1 = (diffSites (NN:=NN) s s').card := by
-  classical
   -- The site really differs
   have hneq : s.act u ≠ s'.act u := by
     simp [diffSites] at hu; exact hu
@@ -562,8 +554,7 @@ lemma exists_single_flip_reduce
   · -- Target value is σ_neg: use updNeg (s'.act u = σ_neg)
     refine ⟨updNeg (NN:=NN) s u, ?_, ?_⟩
     -- (1) DiffOnly property
-    ·
-      refine And.intro
+    · refine And.intro
         (by
           intro v hv
           simp [updNeg, Function.update, hv]
@@ -577,8 +568,7 @@ lemma exists_single_flip_reduce
           exact hneq this
         )
     -- (2) Cardinal reduction
-    ·
-      have hset :
+    · have hset :
           diffSites (NN:=NN) (updNeg (NN:=NN) s u) s'
             = (diffSites (NN:=NN) s s').erase u := by
         ext v
@@ -607,7 +597,6 @@ lemma exists_single_flip_reduce
 lemma RScol_pow_nonneg
     (spec : TwoState.EnergySpec' (NN:=NN)) (p : Params NN) (T : Temperature) :
     ∀ n (i j : NN.State), 0 ≤ (RScol (NN:=NN) (spec:=spec) p T ^ n) i j := by
-  classical
   intro n; induction' n with n ih <;> intro i j
   · -- base case n = 0
     by_cases h : i = j
@@ -636,7 +625,6 @@ lemma RScol_exists_positive_power
     (spec : TwoState.EnergySpec' (NN:=NN)) (p : Params NN) (T : Temperature)
     (s s' : NN.State) :
     ∃ n : ℕ, 0 < (RScol (NN:=NN) (spec:=spec) p T ^ n) s' s := by
-  classical
   set A := RScol (NN:=NN) (spec:=spec) p T
   -- Auxiliary: recursion on number of differing sites.
   have hPow := RScol_pow_nonneg (NN:=NN) (spec:=spec) (p:=p) (T:=T)
@@ -656,7 +644,6 @@ lemma RScol_exists_positive_power
       intro k IH s s' hcard
       -- There is at least one differing site
       have hpos : 0 < (diffSites (NN:=NN) s s').card := by
-
         simp_rw [hcard]
         grind
       obtain ⟨u, hu⟩ := Finset.card_pos.mp hpos
@@ -700,7 +687,6 @@ lemma RScol_exists_positive_power
       have hge :
           (A ^ n) s' s₁ * A s₁ s
             ≤ ∑ j, (A ^ n) s' j * A j s := by
-        classical
         have hnonneg :
           ∀ j ∈ (Finset.univ : Finset NN.State),
             0 ≤ (A ^ n) s' j * A j s := by
@@ -715,10 +701,9 @@ lemma RScol_exists_positive_power
   exact main (diffSites (NN:=NN) s s').card s s' rfl
 
 /-- Irreducible: positive path between any two states. -/
-lemma RScol_irreducible
+lemma RScol_irred
     (spec : TwoState.EnergySpec' (NN:=NN)) (p : Params NN) (T : Temperature) :
     Matrix.Irreducible (RScol (NN:=NN) (spec:=spec) p T) := by
-  classical
   -- Set A := transition matrix
   set A := RScol (NN:=NN) (spec:=spec) p T
   -- Provide the graph structure induced by A for subsequent Path constructions.
@@ -745,7 +730,7 @@ lemma RScol_irreducible
     -- We now need a positive loop at s to get a length>0 path
     have hdiag : 0 < A s s := by
       simpa [A] using RScol_diag_pos (NN:=NN) (spec:=spec) (p:=p) (T:=T) s
-    -- Use helper lemma: positive entry ⇒ ∃ path of positive length
+    -- positive entry ⇒ ∃ path of positive length
     exact (Matrix.path_exists_of_pos_entry (A:=A) (i:=s) (j:=s) hdiag)
   · -- n > 0: convert positive entry of A^n into a path of length n
     have hn_pos : 0 < n := Nat.pos_of_ne_zero hzero
@@ -761,18 +746,17 @@ lemma RScol_irreducible
     exact ⟨⟨p, hp_len_pos⟩⟩
 
 /-- PF uniqueness of the stationary vector in the simplex for the random-scan kernel. -/
-theorem RScol_unique_stationary_simplex :
+theorem RScol_uniqueStationarySimplex :
   ∃! (v : stdSimplex ℝ NN.State),
     (RScol (NN:=NN) (spec:=spec) p T) *ᵥ v.val = v.val := by
-  have h_irred := RScol_irreducible (NN:=NN) (spec:=spec) p T
+  have h_irred := RScol_irred (NN:=NN) (spec:=spec) p T
   have h_col : ∀ j, ∑ i, RScol (NN:=NN) (spec:=spec) p T i j = 1 :=
     RScol_colsum_one (NN:=NN) (spec:=spec) p T
-  exact Matrix.exists_positive_eigenvector_of_irreducible_stochastic
-    (A:=RScol (NN:=NN) (spec:=spec) p T) h_irred h_col
+  exact exists_positive_eigenvector_of_irreducible_stochastic h_irred h_col
 
 /-- Ergodicity: random-scan is aperiodic and irreducible; the Boltzmann law is the
 unique stationary distribution. -/
-theorem randomScan_ergodic_and_uniqueInvariant :
+theorem randomScan_ergodicUniqueInvariant :
   ProbabilityTheory.Kernel.IsReversible (κ)
     ((HopfieldBoltzmann.CEparams (NN:=NN) (spec:=spec) p).μProd T)
   ∧ (∀ s, 0 < RScol (NN:=NN) (spec:=spec) p T s s)
@@ -782,7 +766,7 @@ theorem randomScan_ergodic_and_uniqueInvariant :
   refine ⟨?rev, ?diag, ?irr, ?uniq⟩
   · exact randomScanKernel_reversible (NN:=NN) (spec:=spec) (p:=p) (T:=T)
   · exact RScol_diag_pos (NN:=NN) (spec:=spec) (p:=p) (T:=T)
-  · exact RScol_irreducible (NN:=NN) (spec:=spec) (p:=p) (T:=T)
-  · exact RScol_unique_stationary_simplex (NN:=NN) (spec:=spec) (p:=p) (T:=T)
+  · exact RScol_irred (NN:=NN) (spec:=spec) (p:=p) (T:=T)
+  · exact RScol_uniqueStationarySimplex (NN:=NN) (spec:=spec) (p:=p) (T:=T)
 
 end Ergodicity

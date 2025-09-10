@@ -1,6 +1,9 @@
 import Mathlib.Probability.Kernel.Invariance
 import Mathlib
 
+set_option linter.unusedSectionVars false
+set_option linter.unusedSimpArgs false
+
 open MeasureTheory Filter Set
 
 open scoped ProbabilityTheory
@@ -54,7 +57,6 @@ lemma Finset.sum_if_mem_eq_sum_filter
     (S : Set α) (f : α → β) :
     (∑ x : α, (if x ∈ S then f x else 0))
       = ∑ x ∈ S.toFinset, f x := by
-
   have h_univ :
       (∑ x : α, (if x ∈ S then f x else 0))
         = ∑ x ∈ (Finset.univ : Finset α), (if x ∈ S then f x else 0) := by
@@ -122,7 +124,6 @@ lemma lintegral_fintype_measure_restrict
     (f : α → ℝ≥0∞) :
     ∫⁻ x in A, f x ∂μ
       = ∑ x : α, (if x ∈ A then μ {x} * f x else 0) := by
-
   have hRestr :
       ∫⁻ x in A, f x ∂μ
         = ∑ x : α, f x * (μ.restrict A) {x} := by
@@ -196,7 +197,6 @@ lemma lintegral_restrict_as_sum_if
 
 end FiniteMeasureAPI
 
-
 /-- Evaluation lemma for `Kernel.ofFunOfCountable`. Added for convenient rewriting/simp. -/
 @[simp]
 lemma ofFunOfCountable_apply
@@ -212,7 +212,6 @@ lemma lintegral_kernel_restrict_fintype [Fintype α]
     ∫⁻ x in A, κ x A ∂π
       =
     ∑ x : α, (if x ∈ A then π {x} * κ x A else 0) := by
-
   simpa using
     (lintegral_restrict_as_sum_if (μ:=π) (A:=A) (g:=fun x => κ x A))
 
@@ -220,14 +219,12 @@ open MeasureTheory Set Finset Kernel
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
 
-omit [MeasurableSpace α] [MeasurableSpace β] in
 /-- On a finite (any finite subset) space with measurable singletons, the measure of a finite
 set under a kernel is the finite sum of the singleton masses. -/
 lemma measure_eq_sum_finset
     [DecidableEq α] [MeasurableSpace α] [MeasurableSpace β] [MeasurableSingletonClass α]
     (κ : Kernel β α) (x : β) {B : Set α} (hB : B.Finite) :
     κ x B = ∑ y ∈ hB.toFinset, κ x {y} := by
-
   have hBset : B = (hB.toFinset : Finset α).toSet := by
     ext a; aesop
   set s : Finset α := hB.toFinset
@@ -275,7 +272,6 @@ lemma isReversible_of_pointwise_fintype
     (hPoint :
       ∀ ⦃x y⦄, π {x} * κ x {y} = π {y} * κ y {x})
     : ProbabilityTheory.Kernel.IsReversible κ π := by
-
   intro A B hA hB
   have hFinA : A.Finite := Set.finite_of_subsingleton_fintype A
   have hFinB : B.Finite := Set.finite_of_subsingleton_fintype B
@@ -292,7 +288,6 @@ lemma isReversible_of_pointwise_fintype
         (∑ x : α, (if x ∈ A then π {x} * κ x B else 0))
           =
         ∑ x ∈ hFinA.toFinset, π {x} * κ x B := by
-
       simp_rw
         [(Finset.sum_if_mem_eq_sum_filter
             (S:=A) (f:=fun x => π {x} * κ x B))]
@@ -311,7 +306,6 @@ lemma isReversible_of_pointwise_fintype
         (∑ x : α, (if x ∈ B then π {x} * κ x A else 0))
           =
         ∑ x ∈ hFinB.toFinset, π {x} * κ x A := by
-
       simp_rw
         [(Finset.sum_if_mem_eq_sum_filter
             (S:=B) (f:=fun x => π {x} * κ x A))]
@@ -388,7 +382,6 @@ lemma PMF.toMeasure_bind_fintype
   have hMeasure :
     (p.bind f).toMeasure B
       = ∑ b : β, (p.bind f) b * B.indicator (fun _ : β => (1 : ℝ≥0∞)) b := by
-        classical
         have h0 :
           (p.bind f).toMeasure B
             = ∑ b : β, B.indicator (p.bind f) b := by
@@ -441,7 +434,6 @@ lemma PMF.toMeasure_bind_fintype
               simpa [hR] using h2
             simp [hTerm]
     _ = ∑ a : α, p a * (f a).toMeasure B := by
-            classical
             refine Finset.sum_congr rfl ?_
             intro a _
             have hIndicator :

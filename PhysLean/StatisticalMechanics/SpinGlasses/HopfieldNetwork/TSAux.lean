@@ -2,6 +2,9 @@ import Mathlib.Algebra.EuclideanDomain.Field
 import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Probability.ProbabilityMassFunction.Constructions
 
+set_option linter.unusedSectionVars false
+set_option linter.unusedSimpArgs false
+
 /- Simple ENNReal evaluation lemmas for the Gibbs one-step with Bernoulli bind. -/
 namespace PMF
 open scoped ENNReal NNReal
@@ -173,7 +176,7 @@ lemma ENNReal.ofReal_one_sub_signPiece_of_zero {x : ℝ} (hx : x = 0) :
       simpa using (ENNReal.ofReal_coe_nnreal (p := (1/2 : ℝ≥0)))
 
 
-/-- Helper: real piecewise {1,0,1/2} driven by the sign of a real. -/
+/-- Real piecewise {1,0,1/2} driven by the sign of a real. -/
 @[simp]
 lemma piecewise_sign_eval (x : ℝ) :
     (if 0 < x then 1 else if x < 0 then 0 else (1/2 : ℝ)) =
