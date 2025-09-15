@@ -20,7 +20,6 @@ def IsStochastic (P : Matrix n n ℝ) : Prop :=
 def IsStationary (P : Matrix n n ℝ) (π : stdSimplex ℝ n) : Prop :=
   Pᵀ *ᵥ π.val = π.val
 
-/-! ### API Design (Pillar 2) -/
 
 /-- The main object for a verified MCMC algorithm on finite spaces. -/
 class IsMCMC [DecidableEq n] (P : Matrix n n ℝ) (π : stdSimplex ℝ n) where
@@ -29,7 +28,6 @@ class IsMCMC [DecidableEq n] (P : Matrix n n ℝ) (π : stdSimplex ℝ n) where
   irreducible : Matrix.Irreducible P
   primitive : IsPrimitive P
 
-/-! ### Integration of the PF Theorem (Pillar 2.3 and Pillar 4, Phase 1) -/
 
 variable [Nonempty n]
 
