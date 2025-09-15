@@ -22,7 +22,7 @@ def IsStationary (P : Matrix n n ℝ) (π : stdSimplex ℝ n) : Prop :=
 
 /-! ### API Design (Pillar 2) -/
 
-/-- The central object for a verified MCMC algorithm on finite spaces. (Pillar 2.1) -/
+/-- The main object for a verified MCMC algorithm on finite spaces. -/
 class IsMCMC [DecidableEq n] (P : Matrix n n ℝ) (π : stdSimplex ℝ n) where
   stochastic : IsStochastic P
   stationary : IsStationary P π
@@ -66,7 +66,7 @@ lemma stationaryDistribution_is_stationary [DecidableEq n] (P : Matrix n n ℝ) 
   (Classical.choose_spec (exists_unique_stationary_distribution_of_irreducible h_stoch h_irred).exists)
 
 /--
-  The main theorem for Phase 1 (Pillar 2.3). If a transition matrix is stochastic,
+  If a transition matrix is stochastic,
   irreducible, and primitive, it defines a valid MCMC setup targeting its unique
   stationary distribution (which is guaranteed to exist by the PF theorem).
 -/
