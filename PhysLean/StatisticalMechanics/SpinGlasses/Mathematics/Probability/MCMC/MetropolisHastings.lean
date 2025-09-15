@@ -1,8 +1,5 @@
-import Mathlib
 import PhysLean.StatisticalMechanics.SpinGlasses.Mathematics.Probability.MCMC.Core
 
--- Assuming the foundational definitions from the previous iteration are available.
--- We repeat them here for a self-contained execution context.
 
 namespace MCMC.Finite
 
@@ -160,7 +157,7 @@ lemma mul_min_one_div_eq_min {a b : ℝ} (ha_pos : 0 < a) (hb_nonneg : 0 ≤ b) 
 
 set_option linter.unusedVariables false in
 /--
-  Theorem (Pillar 3.2): The MH kernel satisfies the detailed balance condition (reversibility)
+  Theorem: The MH kernel satisfies the detailed balance condition (reversibility)
   with respect to π. This proof is robust and does not require π to be strictly positive.
 -/
 theorem metropolisHastings_is_reversible [DecidableEq n] (hQ_nonneg : ∀ i j, 0 ≤ Q i j) :
@@ -214,9 +211,7 @@ theorem metropolisHastings_is_reversible [DecidableEq n] (hQ_nonneg : ∀ i j, 0
           _ = min b a := min_comm _ _
           _ = b * A y x := RHS_min.symm
 
-/--
-  Corollary (Pillar 3.2): The Metropolis-Hastings kernel has π as its stationary distribution.
--/
+/-- The Metropolis-Hastings kernel has π as its stationary distribution. -/
 theorem metropolisHastings_is_stationary [DecidableEq n] (hQ_stoch : IsStochastic Q) :
   IsStationary (metropolisHastingsKernel π Q) π := by
   let P := metropolisHastingsKernel π Q
