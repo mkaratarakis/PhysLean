@@ -2,7 +2,7 @@ import PhysLean.StatisticalMechanics.SpinGlasses.Mathematics.LinearAlgebra.Matri
 namespace MCMC.Finite
 
 open Matrix Finset
-
+open BigOperators
 variable {n : Type*} [Fintype n]
 
 /--
@@ -11,6 +11,55 @@ variable {n : Type*} [Fintype n]
 -/
 def IsStochastic (P : Matrix n n ℝ) : Prop :=
   (∀ i j, 0 ≤ P i j) ∧ (∀ i, ∑ j, P i j = 1)
+
+lemma isStochastic_one [DecidableEq n] : IsStochastic (1 : Matrix n n ℝ) := by
+  classical
+  constructor
+  · intro i j
+    by_cases h : i = j
+    · simp [Matrix.one_apply, h]
+    · simp [h]
+  · intro i
+    classical
+    simp [Matrix.one_apply, Finset.mem_univ]
+
+lemma isStochastic_mul {P Q : Matrix n n ℝ}
+    (hP : IsStochastic P) (hQ : IsStochastic Q) :
+    IsStochastic (P * Q) := by
+  classical
+  constructor
+  · intro i j
+    have hterm : ∀ k, 0 ≤ P i k * Q k j := by
+      intro k
+      exact mul_nonneg (hP.1 i k) (hQ.1 k j)
+    have : 0 ≤ ∑ k, P i k * Q k j :=
+      sum_nonneg (by intro k _; simpa using hterm k)
+    simpa [Matrix.mul_apply] using this
+  · intro i
+    calc
+      ∑ j, (P * Q) i j
+          = ∑ j, ∑ k, P i k * Q k j := by simp [Matrix.mul_apply]
+      _ = ∑ k, ∑ j, P i k * Q k j := by
+            simpa using
+              (Finset.sum_comm (s := (Finset.univ : Finset n))
+                (t := (Finset.univ : Finset n))
+                (f := fun j k => P i k * Q k j))
+      _ = ∑ k, P i k * ∑ j, Q k j := by
+            simp [mul_sum]
+      _ = ∑ k, P i k * 1 := by
+            apply Finset.sum_congr rfl
+            intro k hk
+            simp [hQ.2 k]
+      _ = ∑ k, P i k := by simp
+      _ = 1 := hP.2 i
+
+lemma isStochastic_pow [DecidableEq n] {P : Matrix n n ℝ} (hP : IsStochastic P) :
+    ∀ k, IsStochastic (P^k)
+  | 0 => by simpa [pow_zero] using isStochastic_one
+  | k+1 =>
+    by
+      have hk : IsStochastic (P^k) := isStochastic_pow hP k
+      simpa [pow_succ] using isStochastic_mul hk hP
 
 /--
   A probability distribution π (represented as a column vector in the standard simplex)
